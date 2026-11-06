@@ -1,0 +1,4428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="拼音古风大战僵尸">
+<title>拼音古风大战僵尸</title>
+<link rel="icon" href="data:,">
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+body{margin:0;background:#1e293b;font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#111;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:8px;user-select:none}
+#app{display:flex;flex-direction:column;align-items:flex-start}
+
+#stage-wrap{position:relative;overflow:hidden;border-radius:12px}
+#stage{position:absolute;left:0;top:0;width:900px;height:560px;transform-origin:0 0;overflow:hidden;background:#3f6212}
+.layer{position:absolute;left:0;top:0;width:900px;height:560px;pointer-events:none}
+
+#house-col{position:absolute;left:0;top:120px;width:100px;height:420px;background:#a16207}
+#grid{position:absolute;left:0;top:0;width:900px;height:560px}
+.cell{position:absolute;left:0;top:0;width:84px;height:84px;background:#84cc16;cursor:pointer}
+.cell.alt{background:#65a30d}
+.cell.ready{box-shadow:inset 0 0 0 3px rgba(254,240,138,.9)}
+@media (hover:hover){.cell:hover{background:#bef264}}
+.house{position:absolute;left:0;top:0;width:90px;height:80px}
+.house svg{display:block}
+
+.plant{position:absolute;left:0;top:0;width:72px;height:72px}
+.plant svg{display:block}
+.zombie{position:absolute;left:0;top:0;width:80px;height:110px;cursor:pointer;pointer-events:auto}
+.zombie svg{display:block}
+.zombie.target{filter:drop-shadow(0 0 6px #facc15)}
+.zombie.eating{filter:saturate(.6)}
+.zombie .py{position:absolute;left:50%;top:-14px;transform:translateX(-50%);background:#fff;border-radius:6px;padding:0 5px;font-size:14px;font-weight:bold;color:#1e3a8a;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.zombie .py.zh{font-size:18px;color:#7c2d12;background:#fef3c7;font-family:"KaiTi","STKaiti","楷体",serif}
+.pea{position:absolute;left:0;top:0;width:16px;height:16px}
+.pea svg{display:block}
+.sun{position:absolute;left:0;top:0;width:56px;height:56px;cursor:pointer;pointer-events:auto;animation:bob 1.2s ease-in-out infinite}
+.sun svg{display:block}
+@keyframes bob{0%,100%{margin-top:0}50%{margin-top:-6px}}
+.fx{position:absolute;left:0;top:0;font-size:26px;font-weight:bold;color:#fff;text-shadow:0 2px 4px #000;animation:floatup .9s forwards;pointer-events:none;white-space:nowrap}
+.fx.good{color:#bef264}
+.fx.bad{color:#fca5a5}
+@keyframes floatup{from{opacity:1;margin-top:0}to{opacity:0;margin-top:-40px}}
+
+#hud{position:absolute;left:0;top:0;width:900px;height:110px;background:linear-gradient(#5b3a1e,#7c5230);color:#fff;z-index:10}
+#sun-box{position:absolute;left:12px;top:14px;display:flex;align-items:center;gap:6px;font-size:26px;font-weight:bold;background:rgba(0,0,0,.25);padding:4px 12px;border-radius:10px}
+#seeds{position:absolute;left:150px;top:10px;display:flex;gap:8px}
+.seed{width:86px;height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid #78350f;border-radius:8px;background:#fde68a;cursor:pointer;color:#111;font-family:inherit;padding:2px}
+.seed span{font-size:13px}
+.seed b{font-size:14px}
+.seed.sel{outline:3px solid #facc15}
+.seed:disabled{filter:grayscale(.9);opacity:.55;cursor:default}
+#hearts{position:absolute;left:520px;top:14px;font-size:22px;color:#f43f5e;min-height:28px}
+#progress{position:absolute;left:520px;top:56px;width:160px;height:14px;background:rgba(0,0,0,.3);border-radius:7px;overflow:hidden}
+#progress-bar{height:100%;width:0;background:#84cc16;transition:width .3s}
+#combo{position:absolute;left:520px;top:76px;font-size:16px;color:#facc15}
+#btn-cannon{position:absolute;left:700px;top:14px;width:180px;height:40px;border:0;border-radius:8px;background:#f59e0b;color:#111;font-size:16px;font-family:inherit;cursor:pointer}
+#btn-cannon:disabled{background:#64748b;color:#cbd5e1;cursor:default}
+#btn-pause{position:absolute;left:700px;top:60px;width:110px;height:34px;border:0;border-radius:8px;background:#e2e8f0;color:#111;font-size:14px;font-family:inherit;cursor:pointer}
+
+#panel{margin-top:10px;background:#fff;border-radius:12px;padding:12px}
+#level-name{font-size:14px;color:#64748b;margin-bottom:4px}
+#status{font-size:18px;margin-bottom:8px;min-height:26px}
+#status b{color:#2563eb}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.lbl{width:56px;font-weight:bold;color:#475569}
+.card{min-width:52px;padding:8px 10px;border:0;border-radius:8px;color:#fff;font-size:20px;font-family:inherit;cursor:pointer}
+.card.init{background:#3b82f6}
+.card.fin{background:#ef4444}
+.card.tone{background:#eab308;color:#111;font-size:15px}
+.card.sel{outline:4px solid #111;outline-offset:1px}
+.card.choice{background:#92400e;min-width:76px;font-family:"KaiTi","STKaiti","楷体",serif;font-size:24px}
+#choice-sentence{font-size:22px;font-family:"KaiTi","STKaiti","楷体",serif;color:#7c2d12;margin-bottom:8px}
+#btn-clear{padding:8px 14px;border:0;border-radius:8px;background:#e2e8f0;font-size:15px;font-family:inherit;cursor:pointer}
+#msg{min-height:24px;font-size:16px;color:#334155;margin-top:4px}
+#key-hint{font-size:12px;color:#94a3b8;margin-top:6px}
+
+@media (pointer:coarse){
+  html,body{touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;overscroll-behavior:none}
+  body{padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}
+  button,.cell,.zombie,.sun,#stage{touch-action:manipulation}
+  .card{min-height:52px;min-width:64px;font-size:24px;padding:10px 12px}
+  .card.choice{min-width:76px;min-height:56px}
+  .seed{width:96px;height:100px}
+  .seed span{font-size:15px}
+  #btn-cannon,#btn-pause{min-height:48px;font-size:18px}
+  #btn-pause{width:120px}
+  #btn-clear{min-height:48px;padding:10px 18px;font-size:16px}
+  .box button{min-height:52px;font-size:20px}
+  .tile{min-height:72px}
+  .card:active,.seed:active,.tile:active,.box button:active,#btn-cannon:active,#btn-pause:active,#btn-clear:active{transform:scale(.95);filter:brightness(.9)}
+  #key-hint{display:none}
+}
+
+#overlay,#learn{position:fixed;inset:0;background:rgba(15,23,42,.85);display:flex;align-items:center;justify-content:center;z-index:20}
+.box{background:#fff;border-radius:14px;padding:24px;text-align:center;max-width:460px;width:90%}
+.box.wide{max-width:760px;max-height:88vh;overflow:auto;-webkit-overflow-scrolling:touch}
+.box h1{margin:0 0 10px;font-size:26px}
+.box p{margin:6px 0 14px;color:#334155;line-height:1.6}
+.box button{font-size:18px;padding:10px 16px;margin:6px;border:0;border-radius:10px;background:#22c55e;color:#fff;cursor:pointer;font-family:inherit}
+.box button.alt{background:#3b82f6}
+.box button:disabled{background:#94a3b8;cursor:default}
+.box h3{margin:14px 0 6px;text-align:left;color:#334155}
+.tiles{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.tile{width:92px;padding:8px 4px;border:0;border-radius:10px;background:#e0f2fe;cursor:pointer;font-family:inherit;margin:0}
+.tile.wide{width:170px;min-height:64px;background:#fef3c7}
+.tile b{display:block;font-size:22px;color:#1d4ed8}
+.tile.wide b{color:#7c2d12;font-family:"KaiTi","STKaiti","楷体",serif}
+.tile span{font-size:13px;color:#334155}
+
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+  <symbol id="sun" viewBox="0 0 56 56">
+    <g fill="#f59e0b">
+      <path d="M28 1 L32 10 L24 10 Z" transform="rotate(0 28 28)"/>
+      <path d="M28 1 L32 10 L24 10 Z" transform="rotate(45 28 28)"/>
+      <path d="M28 1 L32 10 L24 10 Z" transform="rotate(90 28 28)"/>
+      <path d="M28 1 L32 10 L24 10 Z" transform="rotate(135 28 28)"/>
+      <path d="M28 1 L32 10 L24 10 Z" transform="rotate(180 28 28)"/>
+      <path d="M28 1 L32 10 L24 10 Z" transform="rotate(225 28 28)"/>
+      <path d="M28 1 L32 10 L24 10 Z" transform="rotate(270 28 28)"/>
+      <path d="M28 1 L32 10 L24 10 Z" transform="rotate(315 28 28)"/>
+    </g>
+    <circle cx="28" cy="28" r="19" fill="#fde047" stroke="#f59e0b" stroke-width="2.5"/>
+    <circle cx="22" cy="25" r="2.2" fill="#78350f"/>
+    <circle cx="34" cy="25" r="2.2" fill="#78350f"/>
+    <path d="M21 33 Q28 39 35 33" stroke="#78350f" stroke-width="2" fill="none"/>
+  </symbol>
+
+  <symbol id="pea" viewBox="0 0 16 16">
+    <circle cx="8" cy="8" r="6.5" fill="#22c55e" stroke="#14532d" stroke-width="1.5"/>
+    <circle cx="6" cy="6" r="1.8" fill="#bbf7d0"/>
+  </symbol>
+
+  <symbol id="peashooter" viewBox="0 0 72 72">
+    <ellipse cx="34" cy="64" rx="14" ry="5" fill="#14532d" opacity=".35"/>
+    <rect x="30" y="44" width="8" height="20" fill="#4d7c0f"/>
+    <ellipse cx="22" cy="56" rx="10" ry="5" fill="#22c55e" stroke="#14532d" stroke-width="2"/>
+    <circle cx="30" cy="30" r="20" fill="#4ade80" stroke="#14532d" stroke-width="3"/>
+    <rect x="42" y="24" width="22" height="12" rx="6" fill="#22c55e" stroke="#14532d" stroke-width="3"/>
+    <circle cx="22" cy="26" r="4" fill="#fff"/>
+    <circle cx="24" cy="27" r="2" fill="#111"/>
+    <path d="M24 38 Q30 42 36 38" stroke="#14532d" stroke-width="2" fill="none"/>
+  </symbol>
+
+  <symbol id="sunflower" viewBox="0 0 72 72">
+    <g fill="#fde047" stroke="#ca8a04" stroke-width="2">
+      <circle cx="50" cy="28" r="8"/>
+      <circle cx="45" cy="39" r="8"/>
+      <circle cx="34" cy="44" r="8"/>
+      <circle cx="23" cy="39" r="8"/>
+      <circle cx="18" cy="28" r="8"/>
+      <circle cx="23" cy="17" r="8"/>
+      <circle cx="34" cy="12" r="8"/>
+      <circle cx="45" cy="17" r="8"/>
+    </g>
+    <rect x="32" y="40" width="6" height="24" fill="#22c55e"/>
+    <ellipse cx="44" cy="58" rx="10" ry="5" fill="#4ade80" stroke="#14532d" stroke-width="2"/>
+    <circle cx="34" cy="28" r="14" fill="#92400e" stroke="#451a03" stroke-width="2"/>
+    <circle cx="29" cy="26" r="2" fill="#fff"/>
+    <circle cx="39" cy="26" r="2" fill="#fff"/>
+    <path d="M29 33 Q34 37 39 33" stroke="#fde68a" stroke-width="1.8" fill="none"/>
+  </symbol>
+
+  <symbol id="wallnut" viewBox="0 0 72 72">
+    <ellipse cx="36" cy="40" rx="24" ry="28" fill="#b45309" stroke="#78350f" stroke-width="3"/>
+    <path d="M24 22 Q36 16 48 22" stroke="#92400e" stroke-width="3" fill="none"/>
+    <circle cx="28" cy="36" r="3.5" fill="#fff"/>
+    <circle cx="44" cy="36" r="3.5" fill="#fff"/>
+    <circle cx="29" cy="37" r="1.6" fill="#111"/>
+    <circle cx="45" cy="37" r="1.6" fill="#111"/>
+    <path d="M30 50 Q36 55 42 50" stroke="#451a03" stroke-width="2.5" fill="none"/>
+  </symbol>
+
+  <symbol id="zombie-normal" viewBox="0 0 80 110">
+    <rect x="8" y="60" width="18" height="10" rx="4" fill="#a3e635" stroke="#3f6212" stroke-width="1.5"/>
+    <rect x="54" y="60" width="18" height="10" rx="4" fill="#a3e635" stroke="#3f6212" stroke-width="1.5"/>
+    <rect x="24" y="58" width="32" height="46" rx="6" fill="#475569" stroke="#1e293b" stroke-width="2"/>
+    <rect x="26" y="98" width="11" height="12" fill="#1e293b"/>
+    <rect x="43" y="98" width="11" height="12" fill="#1e293b"/>
+    <circle cx="40" cy="36" r="26" fill="#a3e635" stroke="#3f6212" stroke-width="3"/>
+    <circle cx="31" cy="34" r="5" fill="#fff"/>
+    <circle cx="49" cy="34" r="5" fill="#fff"/>
+    <circle cx="30" cy="35" r="2.2" fill="#b91c1c"/>
+    <circle cx="48" cy="35" r="2.2" fill="#b91c1c"/>
+    <path d="M30 48 Q40 56 50 48" stroke="#14532d" stroke-width="2.5" fill="none"/>
+  </symbol>
+
+  <symbol id="zombie-bucket" viewBox="0 0 80 110">
+    <rect x="8" y="60" width="18" height="10" rx="4" fill="#a3e635" stroke="#3f6212" stroke-width="1.5"/>
+    <rect x="54" y="60" width="18" height="10" rx="4" fill="#a3e635" stroke="#3f6212" stroke-width="1.5"/>
+    <rect x="24" y="58" width="32" height="46" rx="6" fill="#475569" stroke="#1e293b" stroke-width="2"/>
+    <rect x="26" y="98" width="11" height="12" fill="#1e293b"/>
+    <rect x="43" y="98" width="11" height="12" fill="#1e293b"/>
+    <circle cx="40" cy="36" r="26" fill="#a3e635" stroke="#3f6212" stroke-width="3"/>
+    <path d="M16 22 L64 22 L58 2 L22 2 Z" fill="#94a3b8" stroke="#334155" stroke-width="2.5"/>
+    <rect x="13" y="19" width="54" height="6" rx="2" fill="#cbd5e1" stroke="#334155" stroke-width="2"/>
+    <circle cx="31" cy="36" r="5" fill="#fff"/>
+    <circle cx="49" cy="36" r="5" fill="#fff"/>
+    <circle cx="30" cy="37" r="2.2" fill="#b91c1c"/>
+    <circle cx="48" cy="37" r="2.2" fill="#b91c1c"/>
+    <path d="M30 50 Q40 58 50 50" stroke="#14532d" stroke-width="2.5" fill="none"/>
+  </symbol>
+
+  <symbol id="house" viewBox="0 0 90 80">
+    <rect x="10" y="34" width="70" height="46" fill="#fde68a" stroke="#92400e" stroke-width="3"/>
+    <path d="M4 36 L45 6 L86 36 Z" fill="#dc2626" stroke="#7f1d1d" stroke-width="3"/>
+    <rect x="38" y="52" width="14" height="28" fill="#7c2d12"/>
+    <rect x="18" y="48" width="12" height="10" fill="#bae6fd" stroke="#0c4a6e" stroke-width="2"/>
+    <rect x="60" y="48" width="12" height="10" fill="#bae6fd" stroke="#0c4a6e" stroke-width="2"/>
+  </symbol>
+</defs>
+</svg>
+
+<div id="app">
+  <div id="stage-wrap">
+    <div id="stage">
+      <div id="house-col"></div>
+      <div id="grid"></div>
+      <div id="layer-plants" class="layer"></div>
+      <div id="layer-zombies" class="layer"></div>
+      <div id="layer-peas" class="layer"></div>
+      <div id="layer-suns" class="layer"></div>
+      <div id="layer-fx" class="layer"></div>
+      <div id="hud">
+        <div id="sun-box">
+          <svg width="36" height="36" viewBox="0 0 56 56"><use href="#sun" width="56" height="56"/></svg>
+          <span id="sun-val">50</span>
+        </div>
+        <div id="seeds"></div>
+        <div id="hearts"></div>
+        <div id="progress"><div id="progress-bar"></div></div>
+        <div id="combo"></div>
+        <button id="btn-cannon">合体大炮 ×0</button>
+        <button id="btn-pause">暂停 (Esc)</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div id="level-name"></div>
+    <div id="status"></div>
+    <div id="pinyin-panel">
+      <div class="row" id="row-init"><span class="lbl">声母</span></div>
+      <div class="row" id="row-fin"><span class="lbl">韵母</span></div>
+      <div class="row" id="row-tone" hidden><span class="lbl">声调</span></div>
+      <div class="row"><button id="btn-clear">清空选择</button></div>
+    </div>
+    <div id="choice-panel" hidden>
+      <div id="choice-sentence"></div>
+      <div class="row" id="row-choice"><span class="lbl">选字</span></div>
+    </div>
+    <div id="key-hint">键盘：Q/W/E 选植物，1-4 选字或声调，空格 合体大炮，Esc 暂停</div>
+    <div id="msg"></div>
+  </div>
+</div>
+
+<div id="overlay" hidden>
+  <div class="box">
+    <h1 id="ov-title"></h1>
+    <p id="ov-body"></p>
+    <div id="ov-buttons"></div>
+  </div>
+</div>
+
+<div id="learn" hidden>
+  <div class="box wide">
+    <h1>拼音图鉴 · 古风典籍</h1>
+    <p>点击卡片听发音</p>
+    <div id="learn-grid"></div>
+    <button id="learn-close">返回</button>
+  </div>
+</div>
+
+<script>
+// Generated by scripts/build_db.py from db/game.db. Do not edit by hand.
+(function (root) {
+  'use strict';
+  const content = {
+ "syllables": [
+  {
+   "py": "bā",
+   "hz": "八",
+   "init": "b",
+   "fin": "a",
+   "tone": 1,
+   "tier": 1
+  },
+  {
+   "py": "pà",
+   "hz": "怕",
+   "init": "p",
+   "fin": "a",
+   "tone": 4,
+   "tier": 1
+  },
+  {
+   "py": "mā",
+   "hz": "妈",
+   "init": "m",
+   "fin": "a",
+   "tone": 1,
+   "tier": 1
+  },
+  {
+   "py": "fù",
+   "hz": "父",
+   "init": "f",
+   "fin": "u",
+   "tone": 4,
+   "tier": 1
+  },
+  {
+   "py": "dǎ",
+   "hz": "打",
+   "init": "d",
+   "fin": "a",
+   "tone": 3,
+   "tier": 1
+  },
+  {
+   "py": "tā",
+   "hz": "他",
+   "init": "t",
+   "fin": "a",
+   "tone": 1,
+   "tier": 1
+  },
+  {
+   "py": "nǐ",
+   "hz": "你",
+   "init": "n",
+   "fin": "i",
+   "tone": 3,
+   "tier": 1
+  },
+  {
+   "py": "lù",
+   "hz": "路",
+   "init": "l",
+   "fin": "u",
+   "tone": 4,
+   "tier": 1
+  },
+  {
+   "py": "gē",
+   "hz": "哥",
+   "init": "g",
+   "fin": "e",
+   "tone": 1,
+   "tier": 1
+  },
+  {
+   "py": "kě",
+   "hz": "可",
+   "init": "k",
+   "fin": "e",
+   "tone": 3,
+   "tier": 1
+  },
+  {
+   "py": "hǎo",
+   "hz": "好",
+   "init": "h",
+   "fin": "ao",
+   "tone": 3,
+   "tier": 1
+  },
+  {
+   "py": "jī",
+   "hz": "鸡",
+   "init": "j",
+   "fin": "i",
+   "tone": 1,
+   "tier": 2
+  },
+  {
+   "py": "qì",
+   "hz": "气",
+   "init": "q",
+   "fin": "i",
+   "tone": 4,
+   "tier": 2
+  },
+  {
+   "py": "xiǎo",
+   "hz": "小",
+   "init": "x",
+   "fin": "iao",
+   "tone": 3,
+   "tier": 2
+  },
+  {
+   "py": "zhū",
+   "hz": "猪",
+   "init": "zh",
+   "fin": "u",
+   "tone": 1,
+   "tier": 2
+  },
+  {
+   "py": "chē",
+   "hz": "车",
+   "init": "ch",
+   "fin": "e",
+   "tone": 1,
+   "tier": 2
+  },
+  {
+   "py": "shān",
+   "hz": "山",
+   "init": "sh",
+   "fin": "an",
+   "tone": 1,
+   "tier": 2
+  },
+  {
+   "py": "rì",
+   "hz": "日",
+   "init": "r",
+   "fin": "i",
+   "tone": 4,
+   "tier": 2
+  },
+  {
+   "py": "zì",
+   "hz": "字",
+   "init": "z",
+   "fin": "i",
+   "tone": 4,
+   "tier": 2
+  },
+  {
+   "py": "cǎo",
+   "hz": "草",
+   "init": "c",
+   "fin": "ao",
+   "tone": 3,
+   "tier": 2
+  },
+  {
+   "py": "sì",
+   "hz": "四",
+   "init": "s",
+   "fin": "i",
+   "tone": 4,
+   "tier": 2
+  },
+  {
+   "py": "yuè",
+   "hz": "月",
+   "init": "y",
+   "fin": "ue",
+   "tone": 4,
+   "tier": 2
+  },
+  {
+   "py": "wǒ",
+   "hz": "我",
+   "init": "w",
+   "fin": "o",
+   "tone": 3,
+   "tier": 2
+  },
+  {
+   "py": "yǔ",
+   "hz": "雨",
+   "init": "y",
+   "fin": "u",
+   "tone": 3,
+   "tier": 2
+  },
+  {
+   "py": "ài",
+   "hz": "爱",
+   "init": "",
+   "fin": "ai",
+   "tone": 4,
+   "tier": 2
+  },
+  {
+   "py": "ēn",
+   "hz": "恩",
+   "init": "",
+   "fin": "en",
+   "tone": 1,
+   "tier": 2
+  },
+  {
+   "py": "ér",
+   "hz": "儿",
+   "init": "",
+   "fin": "er",
+   "tone": 2,
+   "tier": 2
+  },
+  {
+   "py": "niú",
+   "hz": "牛",
+   "init": "n",
+   "fin": "iu",
+   "tone": 2,
+   "tier": 3
+  },
+  {
+   "py": "lóng",
+   "hz": "龙",
+   "init": "l",
+   "fin": "ong",
+   "tone": 2,
+   "tier": 3
+  },
+  {
+   "py": "hóng",
+   "hz": "红",
+   "init": "h",
+   "fin": "ong",
+   "tone": 2,
+   "tier": 3
+  },
+  {
+   "py": "huā",
+   "hz": "花",
+   "init": "h",
+   "fin": "ua",
+   "tone": 1,
+   "tier": 3
+  },
+  {
+   "py": "kǒu",
+   "hz": "口",
+   "init": "k",
+   "fin": "ou",
+   "tone": 3,
+   "tier": 3
+  },
+  {
+   "py": "shuǐ",
+   "hz": "水",
+   "init": "sh",
+   "fin": "ui",
+   "tone": 3,
+   "tier": 3
+  },
+  {
+   "py": "dà",
+   "hz": "大",
+   "init": "d",
+   "fin": "a",
+   "tone": 4,
+   "tier": 1
+  },
+  {
+   "py": "bái",
+   "hz": "白",
+   "init": "b",
+   "fin": "ai",
+   "tone": 2,
+   "tier": 2
+  },
+  {
+   "py": "mǎi",
+   "hz": "买",
+   "init": "m",
+   "fin": "ai",
+   "tone": 3,
+   "tier": 2
+  },
+  {
+   "py": "lǎo",
+   "hz": "老",
+   "init": "l",
+   "fin": "ao",
+   "tone": 3,
+   "tier": 2
+  },
+  {
+   "py": "yǒu",
+   "hz": "有",
+   "init": "y",
+   "fin": "ou",
+   "tone": 3,
+   "tier": 2
+  },
+  {
+   "py": "sān",
+   "hz": "三",
+   "init": "s",
+   "fin": "an",
+   "tone": 1,
+   "tier": 2
+  },
+  {
+   "py": "shí",
+   "hz": "十",
+   "init": "sh",
+   "fin": "i",
+   "tone": 2,
+   "tier": 2
+  },
+  {
+   "py": "xīn",
+   "hz": "心",
+   "init": "x",
+   "fin": "in",
+   "tone": 1,
+   "tier": 2
+  },
+  {
+   "py": "tiān",
+   "hz": "天",
+   "init": "t",
+   "fin": "ian",
+   "tone": 1,
+   "tier": 3
+  },
+  {
+   "py": "zhōng",
+   "hz": "中",
+   "init": "zh",
+   "fin": "ong",
+   "tone": 1,
+   "tier": 3
+  }
+ ],
+ "idioms": [
+  {
+   "text": "守株待兔",
+   "meaning": "比喻不劳而获，固守陈规",
+   "tier": 1
+  },
+  {
+   "text": "亡羊补牢",
+   "meaning": "出了问题及时补救",
+   "tier": 1
+  },
+  {
+   "text": "画蛇添足",
+   "meaning": "多此一举，反而坏事",
+   "tier": 1
+  },
+  {
+   "text": "掩耳盗铃",
+   "meaning": "自己欺骗自己",
+   "tier": 1
+  },
+  {
+   "text": "井底之蛙",
+   "meaning": "见识短浅的人",
+   "tier": 1
+  },
+  {
+   "text": "刻舟求剑",
+   "meaning": "拘泥成法，不知变通",
+   "tier": 1
+  },
+  {
+   "text": "望梅止渴",
+   "meaning": "用想象安慰自己",
+   "tier": 1
+  },
+  {
+   "text": "塞翁失马",
+   "meaning": "坏事可能变成好事",
+   "tier": 1
+  },
+  {
+   "text": "狐假虎威",
+   "meaning": "借别人的势力欺压人",
+   "tier": 1
+  },
+  {
+   "text": "叶公好龙",
+   "meaning": "口头喜欢，实际并不喜欢",
+   "tier": 1
+  },
+  {
+   "text": "拔苗助长",
+   "meaning": "违背规律，急于求成",
+   "tier": 2
+  },
+  {
+   "text": "一叶障目",
+   "meaning": "被局部现象蒙蔽",
+   "tier": 2
+  },
+  {
+   "text": "自相矛盾",
+   "meaning": "前后说法互相抵触",
+   "tier": 2
+  },
+  {
+   "text": "对牛弹琴",
+   "meaning": "对不懂道理的人讲道理",
+   "tier": 2
+  },
+  {
+   "text": "南辕北辙",
+   "meaning": "做法与目标背道而驰",
+   "tier": 2
+  },
+  {
+   "text": "坐井观天",
+   "meaning": "眼界狭窄，见识有限",
+   "tier": 2
+  },
+  {
+   "text": "买椟还珠",
+   "meaning": "只重外表，不识真正价值",
+   "tier": 2
+  },
+  {
+   "text": "画龙点睛",
+   "meaning": "关键处加一笔，使全篇生动",
+   "tier": 2
+  },
+  {
+   "text": "事半功倍",
+   "meaning": "用力少而收效大",
+   "tier": 2
+  },
+  {
+   "text": "精卫填海",
+   "meaning": "坚持不懈，克服困难",
+   "tier": 2
+  },
+  {
+   "text": "愚公移山",
+   "meaning": "只要坚持，就能做成大事",
+   "tier": 2
+  },
+  {
+   "text": "高山流水",
+   "meaning": "比喻知音难得",
+   "tier": 3
+  },
+  {
+   "text": "三顾茅庐",
+   "meaning": "诚心诚意地邀请贤才",
+   "tier": 3
+  },
+  {
+   "text": "望洋兴叹",
+   "meaning": "面对强大事物而感叹无能为力",
+   "tier": 3
+  },
+  {
+   "text": "胸有成竹",
+   "meaning": "做事之前已有把握",
+   "tier": 3
+  },
+  {
+   "text": "中流砥柱",
+   "meaning": "在危难中起支柱作用的人",
+   "tier": 3
+  },
+  {
+   "text": "一鸣惊人",
+   "meaning": "平时不显眼，一出手就令人惊叹",
+   "tier": 3
+  },
+  {
+   "text": "朝三暮四",
+   "meaning": "用手段哄骗，或反复无常",
+   "tier": 3
+  },
+  {
+   "text": "杯弓蛇影",
+   "meaning": "疑神疑鬼，自相惊扰",
+   "tier": 3
+  },
+  {
+   "text": "精益求精",
+   "meaning": "已经很好，还要不断改进",
+   "tier": 2
+  },
+  {
+   "text": "百发百中",
+   "meaning": "每次都能命中目标，比喻做事有把握",
+   "tier": 1
+  },
+  {
+   "text": "守口如瓶",
+   "meaning": "像瓶口塞住一样，不随便说话",
+   "tier": 2
+  },
+  {
+   "text": "三心二意",
+   "meaning": "做事不专心，犹豫不定",
+   "tier": 1
+  },
+  {
+   "text": "四面八方",
+   "meaning": "各个方向",
+   "tier": 1
+  },
+  {
+   "text": "五湖四海",
+   "meaning": "指全国各地，天下",
+   "tier": 2
+  },
+  {
+   "text": "七上八下",
+   "meaning": "心里慌乱，不安定",
+   "tier": 1
+  },
+  {
+   "text": "九牛一毛",
+   "meaning": "比喻极其微小的部分",
+   "tier": 2
+  },
+  {
+   "text": "十全十美",
+   "meaning": "十分完美，没有缺陷",
+   "tier": 1
+  },
+  {
+   "text": "一箭双雕",
+   "meaning": "一次行动同时取得两个成果",
+   "tier": 2
+  },
+  {
+   "text": "入木三分",
+   "meaning": "书法笔力雄健，也比喻分析深刻",
+   "tier": 3
+  },
+  {
+   "text": "虎头蛇尾",
+   "meaning": "开始声势大，结尾冷清",
+   "tier": 2
+  },
+  {
+   "text": "目不转睛",
+   "meaning": "注意力高度集中地看",
+   "tier": 1
+  },
+  {
+   "text": "不耻下问",
+   "meaning": "不以向地位低的人请教为羞耻",
+   "tier": 3
+  },
+  {
+   "text": "半途而废",
+   "meaning": "做事中途停止，没有坚持到底",
+   "tier": 1
+  },
+  {
+   "text": "废寝忘食",
+   "meaning": "专心做事，连睡觉吃饭都忘了",
+   "tier": 2
+  },
+  {
+   "text": "草木皆兵",
+   "meaning": "形容惊慌过度，疑神疑鬼",
+   "tier": 3
+  },
+  {
+   "text": "众志成城",
+   "meaning": "大家齐心协力，力量如同城墙般坚固",
+   "tier": 2
+  },
+  {
+   "text": "持之以恒",
+   "meaning": "长久坚持下去",
+   "tier": 2
+  },
+  {
+   "text": "锲而不舍",
+   "meaning": "刻一下，不停止，比喻坚持不懈",
+   "tier": 3
+  },
+  {
+   "text": "闻鸡起舞",
+   "meaning": "听到鸡叫就起床练剑，比喻发奋努力",
+   "tier": 3
+  },
+  {
+   "text": "悬梁刺股",
+   "meaning": "形容刻苦学习",
+   "tier": 3
+  },
+  {
+   "text": "囊萤映雪",
+   "meaning": "借萤火虫与雪光读书，形容勤学",
+   "tier": 3
+  },
+  {
+   "text": "笨鸟先飞",
+   "meaning": "能力差的人先下手，勤奋努力",
+   "tier": 3
+  }
+ ],
+ "poems": [
+  {
+   "title": "静夜思",
+   "author": "李白",
+   "dynasty": "唐",
+   "lines": [
+    "床前明月光",
+    "疑是地上霜",
+    "举头望明月",
+    "低头思故乡"
+   ]
+  },
+  {
+   "title": "登鹳雀楼",
+   "author": "王之涣",
+   "dynasty": "唐",
+   "lines": [
+    "白日依山尽",
+    "黄河入海流",
+    "欲穷千里目",
+    "更上一层楼"
+   ]
+  },
+  {
+   "title": "春晓",
+   "author": "孟浩然",
+   "dynasty": "唐",
+   "lines": [
+    "春眠不觉晓",
+    "处处闻啼鸟",
+    "夜来风雨声",
+    "花落知多少"
+   ]
+  },
+  {
+   "title": "相思",
+   "author": "王维",
+   "dynasty": "唐",
+   "lines": [
+    "红豆生南国",
+    "春来发几枝",
+    "愿君多采撷",
+    "此物最相思"
+   ]
+  },
+  {
+   "title": "江雪",
+   "author": "柳宗元",
+   "dynasty": "唐",
+   "lines": [
+    "千山鸟飞绝",
+    "万径人踪灭",
+    "孤舟蓑笠翁",
+    "独钓寒江雪"
+   ]
+  },
+  {
+   "title": "悯农",
+   "author": "李绅",
+   "dynasty": "唐",
+   "lines": [
+    "锄禾日当午",
+    "汗滴禾下土",
+    "谁知盘中餐",
+    "粒粒皆辛苦"
+   ]
+  },
+  {
+   "title": "咏鹅",
+   "author": "骆宾王",
+   "dynasty": "唐",
+   "lines": [
+    "鹅鹅鹅",
+    "曲项向天歌",
+    "白毛浮绿水",
+    "红掌拨清波"
+   ]
+  },
+  {
+   "title": "望庐山瀑布",
+   "author": "李白",
+   "dynasty": "唐",
+   "lines": [
+    "日照香炉生紫烟",
+    "遥看瀑布挂前川",
+    "飞流直下三千尺",
+    "疑是银河落九天"
+   ]
+  },
+  {
+   "title": "游子吟",
+   "author": "孟郊",
+   "dynasty": "唐",
+   "lines": [
+    "慈母手中线",
+    "游子身上衣",
+    "临行密密缝",
+    "意恐迟迟归",
+    "谁言寸草心",
+    "报得三春晖"
+   ]
+  },
+  {
+   "title": "饮湖上初晴后雨",
+   "author": "苏轼",
+   "dynasty": "宋",
+   "lines": [
+    "水光潋滟晴方好",
+    "山色空蒙雨亦奇",
+    "欲把西湖比西子",
+    "淡妆浓抹总相宜"
+   ]
+  },
+  {
+   "title": "泊秦淮",
+   "author": "杜牧",
+   "dynasty": "唐",
+   "lines": [
+    "烟笼寒水月笼沙",
+    "夜泊秦淮近酒家",
+    "商女不知亡国恨",
+    "隔江犹唱后庭花"
+   ]
+  },
+  {
+   "title": "赋得古原草送别",
+   "author": "白居易",
+   "dynasty": "唐",
+   "lines": [
+    "离离原上草",
+    "一岁一枯荣",
+    "野火烧不尽",
+    "春风吹又生"
+   ]
+  },
+  {
+   "title": "寻隐者不遇",
+   "author": "贾岛",
+   "dynasty": "唐",
+   "lines": [
+    "松下问童子",
+    "言师采药去",
+    "只在此山中",
+    "云深不知处"
+   ]
+  },
+  {
+   "title": "早发白帝城",
+   "author": "李白",
+   "dynasty": "唐",
+   "lines": [
+    "朝辞白帝彩云间",
+    "千里江陵一日还",
+    "两岸猿声啼不住",
+    "轻舟已过万重山"
+   ]
+  },
+  {
+   "title": "出塞",
+   "author": "王昌龄",
+   "dynasty": "唐",
+   "lines": [
+    "秦时明月汉时关",
+    "万里长征人未还",
+    "但使龙城飞将在",
+    "不教胡马度阴山"
+   ]
+  }
+ ],
+ "chars": [
+  {
+   "ch": "一",
+   "init": "y",
+   "fin": "i",
+   "tone": 1
+  },
+  {
+   "ch": "七",
+   "init": "q",
+   "fin": "i",
+   "tone": 1
+  },
+  {
+   "ch": "万",
+   "init": "w",
+   "fin": "an",
+   "tone": 4
+  },
+  {
+   "ch": "三",
+   "init": "s",
+   "fin": "an",
+   "tone": 1
+  },
+  {
+   "ch": "上",
+   "init": "sh",
+   "fin": "ang",
+   "tone": 4
+  },
+  {
+   "ch": "下",
+   "init": "x",
+   "fin": "ia",
+   "tone": 4
+  },
+  {
+   "ch": "不",
+   "init": "b",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "两",
+   "init": "l",
+   "fin": "iang",
+   "tone": 3
+  },
+  {
+   "ch": "中",
+   "init": "zh",
+   "fin": "ong",
+   "tone": 1
+  },
+  {
+   "ch": "临",
+   "init": "l",
+   "fin": "in",
+   "tone": 2
+  },
+  {
+   "ch": "举",
+   "init": "j",
+   "fin": "u",
+   "tone": 3
+  },
+  {
+   "ch": "之",
+   "init": "zh",
+   "fin": "i",
+   "tone": 1
+  },
+  {
+   "ch": "九",
+   "init": "j",
+   "fin": "iu",
+   "tone": 3
+  },
+  {
+   "ch": "乡",
+   "init": "x",
+   "fin": "iang",
+   "tone": 1
+  },
+  {
+   "ch": "买",
+   "init": "m",
+   "fin": "ai",
+   "tone": 3
+  },
+  {
+   "ch": "事",
+   "init": "sh",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "二",
+   "init": "",
+   "fin": "er",
+   "tone": 4
+  },
+  {
+   "ch": "云",
+   "init": "y",
+   "fin": "un",
+   "tone": 2
+  },
+  {
+   "ch": "五",
+   "init": "w",
+   "fin": "u",
+   "tone": 3
+  },
+  {
+   "ch": "井",
+   "init": "j",
+   "fin": "ing",
+   "tone": 3
+  },
+  {
+   "ch": "亡",
+   "init": "w",
+   "fin": "ang",
+   "tone": 2
+  },
+  {
+   "ch": "亦",
+   "init": "y",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "人",
+   "init": "r",
+   "fin": "en",
+   "tone": 2
+  },
+  {
+   "ch": "以",
+   "init": "y",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "众",
+   "init": "zh",
+   "fin": "ong",
+   "tone": 4
+  },
+  {
+   "ch": "但",
+   "init": "d",
+   "fin": "an",
+   "tone": 4
+  },
+  {
+   "ch": "低",
+   "init": "d",
+   "fin": "i",
+   "tone": 1
+  },
+  {
+   "ch": "住",
+   "init": "zh",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "使",
+   "init": "sh",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "依",
+   "init": "y",
+   "fin": "i",
+   "tone": 1
+  },
+  {
+   "ch": "倍",
+   "init": "b",
+   "fin": "ei",
+   "tone": 4
+  },
+  {
+   "ch": "假",
+   "init": "j",
+   "fin": "ia",
+   "tone": 3
+  },
+  {
+   "ch": "先",
+   "init": "x",
+   "fin": "ian",
+   "tone": 1
+  },
+  {
+   "ch": "光",
+   "init": "g",
+   "fin": "uang",
+   "tone": 1
+  },
+  {
+   "ch": "兔",
+   "init": "t",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "入",
+   "init": "r",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "全",
+   "init": "q",
+   "fin": "uan",
+   "tone": 2
+  },
+  {
+   "ch": "八",
+   "init": "b",
+   "fin": "a",
+   "tone": 1
+  },
+  {
+   "ch": "公",
+   "init": "g",
+   "fin": "ong",
+   "tone": 1
+  },
+  {
+   "ch": "关",
+   "init": "g",
+   "fin": "uan",
+   "tone": 1
+  },
+  {
+   "ch": "兴",
+   "init": "x",
+   "fin": "ing",
+   "tone": 1
+  },
+  {
+   "ch": "兵",
+   "init": "b",
+   "fin": "ing",
+   "tone": 1
+  },
+  {
+   "ch": "几",
+   "init": "j",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "分",
+   "init": "f",
+   "fin": "en",
+   "tone": 1
+  },
+  {
+   "ch": "刺",
+   "init": "c",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "刻",
+   "init": "k",
+   "fin": "e",
+   "tone": 4
+  },
+  {
+   "ch": "前",
+   "init": "q",
+   "fin": "ian",
+   "tone": 2
+  },
+  {
+   "ch": "剑",
+   "init": "j",
+   "fin": "ian",
+   "tone": 4
+  },
+  {
+   "ch": "功",
+   "init": "g",
+   "fin": "ong",
+   "tone": 1
+  },
+  {
+   "ch": "助",
+   "init": "zh",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "北",
+   "init": "b",
+   "fin": "ei",
+   "tone": 3
+  },
+  {
+   "ch": "十",
+   "init": "sh",
+   "fin": "i",
+   "tone": 2
+  },
+  {
+   "ch": "千",
+   "init": "q",
+   "fin": "ian",
+   "tone": 1
+  },
+  {
+   "ch": "午",
+   "init": "w",
+   "fin": "u",
+   "tone": 3
+  },
+  {
+   "ch": "半",
+   "init": "b",
+   "fin": "an",
+   "tone": 4
+  },
+  {
+   "ch": "南",
+   "init": "n",
+   "fin": "an",
+   "tone": 2
+  },
+  {
+   "ch": "卫",
+   "init": "w",
+   "fin": "ei",
+   "tone": 4
+  },
+  {
+   "ch": "原",
+   "init": "y",
+   "fin": "uan",
+   "tone": 2
+  },
+  {
+   "ch": "去",
+   "init": "q",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "又",
+   "init": "y",
+   "fin": "ou",
+   "tone": 4
+  },
+  {
+   "ch": "双",
+   "init": "sh",
+   "fin": "uang",
+   "tone": 1
+  },
+  {
+   "ch": "发",
+   "init": "f",
+   "fin": "a",
+   "tone": 1
+  },
+  {
+   "ch": "口",
+   "init": "k",
+   "fin": "ou",
+   "tone": 3
+  },
+  {
+   "ch": "只",
+   "init": "zh",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "叶",
+   "init": "y",
+   "fin": "e",
+   "tone": 4
+  },
+  {
+   "ch": "叹",
+   "init": "t",
+   "fin": "an",
+   "tone": 4
+  },
+  {
+   "ch": "后",
+   "init": "h",
+   "fin": "ou",
+   "tone": 4
+  },
+  {
+   "ch": "向",
+   "init": "x",
+   "fin": "iang",
+   "tone": 4
+  },
+  {
+   "ch": "君",
+   "init": "j",
+   "fin": "un",
+   "tone": 1
+  },
+  {
+   "ch": "吹",
+   "init": "ch",
+   "fin": "ui",
+   "tone": 1
+  },
+  {
+   "ch": "唱",
+   "init": "ch",
+   "fin": "ang",
+   "tone": 4
+  },
+  {
+   "ch": "商",
+   "init": "sh",
+   "fin": "ang",
+   "tone": 1
+  },
+  {
+   "ch": "啼",
+   "init": "t",
+   "fin": "i",
+   "tone": 2
+  },
+  {
+   "ch": "囊",
+   "init": "n",
+   "fin": "ang",
+   "tone": 2
+  },
+  {
+   "ch": "四",
+   "init": "s",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "国",
+   "init": "g",
+   "fin": "uo",
+   "tone": 2
+  },
+  {
+   "ch": "土",
+   "init": "t",
+   "fin": "u",
+   "tone": 3
+  },
+  {
+   "ch": "在",
+   "init": "z",
+   "fin": "ai",
+   "tone": 4
+  },
+  {
+   "ch": "地",
+   "init": "d",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "坐",
+   "init": "z",
+   "fin": "uo",
+   "tone": 4
+  },
+  {
+   "ch": "城",
+   "init": "ch",
+   "fin": "eng",
+   "tone": 2
+  },
+  {
+   "ch": "塞",
+   "init": "s",
+   "fin": "ai",
+   "tone": 1
+  },
+  {
+   "ch": "填",
+   "init": "t",
+   "fin": "ian",
+   "tone": 2
+  },
+  {
+   "ch": "声",
+   "init": "sh",
+   "fin": "eng",
+   "tone": 1
+  },
+  {
+   "ch": "处",
+   "init": "ch",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "多",
+   "init": "d",
+   "fin": "uo",
+   "tone": 1
+  },
+  {
+   "ch": "夜",
+   "init": "y",
+   "fin": "e",
+   "tone": 4
+  },
+  {
+   "ch": "天",
+   "init": "t",
+   "fin": "ian",
+   "tone": 1
+  },
+  {
+   "ch": "失",
+   "init": "sh",
+   "fin": "i",
+   "tone": 1
+  },
+  {
+   "ch": "头",
+   "init": "t",
+   "fin": "ou",
+   "tone": 2
+  },
+  {
+   "ch": "奇",
+   "init": "q",
+   "fin": "i",
+   "tone": 2
+  },
+  {
+   "ch": "女",
+   "init": "n",
+   "fin": "ü",
+   "tone": 3
+  },
+  {
+   "ch": "好",
+   "init": "h",
+   "fin": "ao",
+   "tone": 3
+  },
+  {
+   "ch": "如",
+   "init": "r",
+   "fin": "u",
+   "tone": 2
+  },
+  {
+   "ch": "妆",
+   "init": "zh",
+   "fin": "uang",
+   "tone": 1
+  },
+  {
+   "ch": "威",
+   "init": "w",
+   "fin": "ei",
+   "tone": 1
+  },
+  {
+   "ch": "子",
+   "init": "z",
+   "fin": "i",
+   "tone": 0
+  },
+  {
+   "ch": "孤",
+   "init": "g",
+   "fin": "u",
+   "tone": 1
+  },
+  {
+   "ch": "守",
+   "init": "sh",
+   "fin": "ou",
+   "tone": 3
+  },
+  {
+   "ch": "宜",
+   "init": "y",
+   "fin": "i",
+   "tone": 2
+  },
+  {
+   "ch": "家",
+   "init": "j",
+   "fin": "ia",
+   "tone": 1
+  },
+  {
+   "ch": "密",
+   "init": "m",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "寒",
+   "init": "h",
+   "fin": "an",
+   "tone": 2
+  },
+  {
+   "ch": "寝",
+   "init": "q",
+   "fin": "in",
+   "tone": 3
+  },
+  {
+   "ch": "寸",
+   "init": "c",
+   "fin": "un",
+   "tone": 4
+  },
+  {
+   "ch": "对",
+   "init": "d",
+   "fin": "ui",
+   "tone": 4
+  },
+  {
+   "ch": "将",
+   "init": "j",
+   "fin": "iang",
+   "tone": 1
+  },
+  {
+   "ch": "少",
+   "init": "sh",
+   "fin": "ao",
+   "tone": 3
+  },
+  {
+   "ch": "尺",
+   "init": "ch",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "尽",
+   "init": "j",
+   "fin": "in",
+   "tone": 3
+  },
+  {
+   "ch": "尾",
+   "init": "w",
+   "fin": "ei",
+   "tone": 3
+  },
+  {
+   "ch": "层",
+   "init": "c",
+   "fin": "eng",
+   "tone": 2
+  },
+  {
+   "ch": "山",
+   "init": "sh",
+   "fin": "an",
+   "tone": 1
+  },
+  {
+   "ch": "岁",
+   "init": "s",
+   "fin": "ui",
+   "tone": 4
+  },
+  {
+   "ch": "岸",
+   "init": "",
+   "fin": "an",
+   "tone": 4
+  },
+  {
+   "ch": "川",
+   "init": "ch",
+   "fin": "uan",
+   "tone": 1
+  },
+  {
+   "ch": "已",
+   "init": "y",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "布",
+   "init": "b",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "师",
+   "init": "sh",
+   "fin": "i",
+   "tone": 1
+  },
+  {
+   "ch": "帝",
+   "init": "d",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "床",
+   "init": "ch",
+   "fin": "uang",
+   "tone": 2
+  },
+  {
+   "ch": "庐",
+   "init": "l",
+   "fin": "u",
+   "tone": 2
+  },
+  {
+   "ch": "底",
+   "init": "d",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "废",
+   "init": "f",
+   "fin": "ei",
+   "tone": 4
+  },
+  {
+   "ch": "度",
+   "init": "d",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "庭",
+   "init": "t",
+   "fin": "ing",
+   "tone": 2
+  },
+  {
+   "ch": "弓",
+   "init": "g",
+   "fin": "ong",
+   "tone": 1
+  },
+  {
+   "ch": "弹",
+   "init": "d",
+   "fin": "an",
+   "tone": 4
+  },
+  {
+   "ch": "归",
+   "init": "g",
+   "fin": "ui",
+   "tone": 1
+  },
+  {
+   "ch": "当",
+   "init": "d",
+   "fin": "ang",
+   "tone": 1
+  },
+  {
+   "ch": "彩",
+   "init": "c",
+   "fin": "ai",
+   "tone": 3
+  },
+  {
+   "ch": "影",
+   "init": "y",
+   "fin": "ing",
+   "tone": 3
+  },
+  {
+   "ch": "征",
+   "init": "zh",
+   "fin": "eng",
+   "tone": 1
+  },
+  {
+   "ch": "径",
+   "init": "j",
+   "fin": "ing",
+   "tone": 4
+  },
+  {
+   "ch": "待",
+   "init": "d",
+   "fin": "ai",
+   "tone": 4
+  },
+  {
+   "ch": "得",
+   "init": "d",
+   "fin": "e",
+   "tone": 2
+  },
+  {
+   "ch": "心",
+   "init": "x",
+   "fin": "in",
+   "tone": 1
+  },
+  {
+   "ch": "志",
+   "init": "zh",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "忘",
+   "init": "w",
+   "fin": "ang",
+   "tone": 4
+  },
+  {
+   "ch": "思",
+   "init": "s",
+   "fin": "i",
+   "tone": 1
+  },
+  {
+   "ch": "总",
+   "init": "z",
+   "fin": "ong",
+   "tone": 3
+  },
+  {
+   "ch": "恐",
+   "init": "k",
+   "fin": "ong",
+   "tone": 3
+  },
+  {
+   "ch": "恒",
+   "init": "h",
+   "fin": "eng",
+   "tone": 2
+  },
+  {
+   "ch": "恨",
+   "init": "h",
+   "fin": "en",
+   "tone": 4
+  },
+  {
+   "ch": "悬",
+   "init": "x",
+   "fin": "uan",
+   "tone": 2
+  },
+  {
+   "ch": "惊",
+   "init": "j",
+   "fin": "ing",
+   "tone": 1
+  },
+  {
+   "ch": "意",
+   "init": "y",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "愚",
+   "init": "y",
+   "fin": "u",
+   "tone": 2
+  },
+  {
+   "ch": "愿",
+   "init": "y",
+   "fin": "uan",
+   "tone": 4
+  },
+  {
+   "ch": "慈",
+   "init": "c",
+   "fin": "i",
+   "tone": 2
+  },
+  {
+   "ch": "成",
+   "init": "ch",
+   "fin": "eng",
+   "tone": 2
+  },
+  {
+   "ch": "手",
+   "init": "sh",
+   "fin": "ou",
+   "tone": 3
+  },
+  {
+   "ch": "把",
+   "init": "b",
+   "fin": "a",
+   "tone": 3
+  },
+  {
+   "ch": "报",
+   "init": "b",
+   "fin": "ao",
+   "tone": 4
+  },
+  {
+   "ch": "抹",
+   "init": "m",
+   "fin": "o",
+   "tone": 3
+  },
+  {
+   "ch": "拔",
+   "init": "b",
+   "fin": "a",
+   "tone": 2
+  },
+  {
+   "ch": "拨",
+   "init": "b",
+   "fin": "o",
+   "tone": 1
+  },
+  {
+   "ch": "持",
+   "init": "ch",
+   "fin": "i",
+   "tone": 2
+  },
+  {
+   "ch": "挂",
+   "init": "g",
+   "fin": "ua",
+   "tone": 4
+  },
+  {
+   "ch": "掌",
+   "init": "zh",
+   "fin": "ang",
+   "tone": 3
+  },
+  {
+   "ch": "掩",
+   "init": "y",
+   "fin": "an",
+   "tone": 3
+  },
+  {
+   "ch": "撷",
+   "init": "x",
+   "fin": "ie",
+   "tone": 2
+  },
+  {
+   "ch": "故",
+   "init": "g",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "教",
+   "init": "j",
+   "fin": "iao",
+   "tone": 4
+  },
+  {
+   "ch": "方",
+   "init": "f",
+   "fin": "ang",
+   "tone": 1
+  },
+  {
+   "ch": "日",
+   "init": "r",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "时",
+   "init": "sh",
+   "fin": "i",
+   "tone": 2
+  },
+  {
+   "ch": "明",
+   "init": "m",
+   "fin": "ing",
+   "tone": 2
+  },
+  {
+   "ch": "映",
+   "init": "y",
+   "fin": "ing",
+   "tone": 4
+  },
+  {
+   "ch": "春",
+   "init": "ch",
+   "fin": "un",
+   "tone": 1
+  },
+  {
+   "ch": "是",
+   "init": "sh",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "晓",
+   "init": "x",
+   "fin": "iao",
+   "tone": 3
+  },
+  {
+   "ch": "晖",
+   "init": "h",
+   "fin": "ui",
+   "tone": 1
+  },
+  {
+   "ch": "晴",
+   "init": "q",
+   "fin": "ing",
+   "tone": 2
+  },
+  {
+   "ch": "暮",
+   "init": "m",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "曲",
+   "init": "q",
+   "fin": "u",
+   "tone": 1
+  },
+  {
+   "ch": "更",
+   "init": "g",
+   "fin": "eng",
+   "tone": 4
+  },
+  {
+   "ch": "最",
+   "init": "z",
+   "fin": "ui",
+   "tone": 4
+  },
+  {
+   "ch": "月",
+   "init": "y",
+   "fin": "ue",
+   "tone": 4
+  },
+  {
+   "ch": "有",
+   "init": "y",
+   "fin": "ou",
+   "tone": 3
+  },
+  {
+   "ch": "望",
+   "init": "w",
+   "fin": "ang",
+   "tone": 4
+  },
+  {
+   "ch": "朝",
+   "init": "ch",
+   "fin": "ao",
+   "tone": 2
+  },
+  {
+   "ch": "木",
+   "init": "m",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "未",
+   "init": "w",
+   "fin": "ei",
+   "tone": 4
+  },
+  {
+   "ch": "来",
+   "init": "l",
+   "fin": "ai",
+   "tone": 2
+  },
+  {
+   "ch": "杯",
+   "init": "b",
+   "fin": "ei",
+   "tone": 1
+  },
+  {
+   "ch": "松",
+   "init": "s",
+   "fin": "ong",
+   "tone": 1
+  },
+  {
+   "ch": "枝",
+   "init": "zh",
+   "fin": "i",
+   "tone": 1
+  },
+  {
+   "ch": "枯",
+   "init": "k",
+   "fin": "u",
+   "tone": 1
+  },
+  {
+   "ch": "柱",
+   "init": "zh",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "株",
+   "init": "zh",
+   "fin": "u",
+   "tone": 1
+  },
+  {
+   "ch": "梁",
+   "init": "l",
+   "fin": "iang",
+   "tone": 2
+  },
+  {
+   "ch": "梅",
+   "init": "m",
+   "fin": "ei",
+   "tone": 2
+  },
+  {
+   "ch": "椟",
+   "init": "d",
+   "fin": "u",
+   "tone": 2
+  },
+  {
+   "ch": "楼",
+   "init": "l",
+   "fin": "ou",
+   "tone": 2
+  },
+  {
+   "ch": "欲",
+   "init": "y",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "歌",
+   "init": "g",
+   "fin": "e",
+   "tone": 1
+  },
+  {
+   "ch": "止",
+   "init": "zh",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "此",
+   "init": "c",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "母",
+   "init": "m",
+   "fin": "u",
+   "tone": 3
+  },
+  {
+   "ch": "比",
+   "init": "b",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "毛",
+   "init": "m",
+   "fin": "ao",
+   "tone": 2
+  },
+  {
+   "ch": "水",
+   "init": "sh",
+   "fin": "ui",
+   "tone": 3
+  },
+  {
+   "ch": "求",
+   "init": "q",
+   "fin": "iu",
+   "tone": 2
+  },
+  {
+   "ch": "汉",
+   "init": "h",
+   "fin": "an",
+   "tone": 4
+  },
+  {
+   "ch": "汗",
+   "init": "h",
+   "fin": "an",
+   "tone": 4
+  },
+  {
+   "ch": "江",
+   "init": "j",
+   "fin": "iang",
+   "tone": 1
+  },
+  {
+   "ch": "沙",
+   "init": "sh",
+   "fin": "a",
+   "tone": 1
+  },
+  {
+   "ch": "河",
+   "init": "h",
+   "fin": "e",
+   "tone": 2
+  },
+  {
+   "ch": "泊",
+   "init": "p",
+   "fin": "o",
+   "tone": 1
+  },
+  {
+   "ch": "波",
+   "init": "b",
+   "fin": "o",
+   "tone": 1
+  },
+  {
+   "ch": "洋",
+   "init": "y",
+   "fin": "ang",
+   "tone": 2
+  },
+  {
+   "ch": "流",
+   "init": "l",
+   "fin": "iu",
+   "tone": 2
+  },
+  {
+   "ch": "浓",
+   "init": "n",
+   "fin": "ong",
+   "tone": 2
+  },
+  {
+   "ch": "浮",
+   "init": "f",
+   "fin": "u",
+   "tone": 2
+  },
+  {
+   "ch": "海",
+   "init": "h",
+   "fin": "ai",
+   "tone": 3
+  },
+  {
+   "ch": "淡",
+   "init": "d",
+   "fin": "an",
+   "tone": 4
+  },
+  {
+   "ch": "淮",
+   "init": "h",
+   "fin": "uai",
+   "tone": 2
+  },
+  {
+   "ch": "深",
+   "init": "sh",
+   "fin": "en",
+   "tone": 1
+  },
+  {
+   "ch": "添",
+   "init": "t",
+   "fin": "ian",
+   "tone": 1
+  },
+  {
+   "ch": "清",
+   "init": "q",
+   "fin": "ing",
+   "tone": 1
+  },
+  {
+   "ch": "渴",
+   "init": "k",
+   "fin": "e",
+   "tone": 3
+  },
+  {
+   "ch": "游",
+   "init": "y",
+   "fin": "ou",
+   "tone": 2
+  },
+  {
+   "ch": "湖",
+   "init": "h",
+   "fin": "u",
+   "tone": 2
+  },
+  {
+   "ch": "滟",
+   "init": "y",
+   "fin": "an",
+   "tone": 4
+  },
+  {
+   "ch": "滴",
+   "init": "d",
+   "fin": "i",
+   "tone": 1
+  },
+  {
+   "ch": "潋",
+   "init": "l",
+   "fin": "ian",
+   "tone": 4
+  },
+  {
+   "ch": "瀑",
+   "init": "p",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "火",
+   "init": "h",
+   "fin": "uo",
+   "tone": 3
+  },
+  {
+   "ch": "灭",
+   "init": "m",
+   "fin": "ie",
+   "tone": 4
+  },
+  {
+   "ch": "炉",
+   "init": "l",
+   "fin": "u",
+   "tone": 2
+  },
+  {
+   "ch": "点",
+   "init": "d",
+   "fin": "ian",
+   "tone": 3
+  },
+  {
+   "ch": "烟",
+   "init": "y",
+   "fin": "an",
+   "tone": 1
+  },
+  {
+   "ch": "烧",
+   "init": "sh",
+   "fin": "ao",
+   "tone": 1
+  },
+  {
+   "ch": "照",
+   "init": "zh",
+   "fin": "ao",
+   "tone": 4
+  },
+  {
+   "ch": "牛",
+   "init": "n",
+   "fin": "iu",
+   "tone": 2
+  },
+  {
+   "ch": "牢",
+   "init": "l",
+   "fin": "ao",
+   "tone": 2
+  },
+  {
+   "ch": "物",
+   "init": "w",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "犹",
+   "init": "y",
+   "fin": "ou",
+   "tone": 2
+  },
+  {
+   "ch": "狐",
+   "init": "h",
+   "fin": "u",
+   "tone": 2
+  },
+  {
+   "ch": "独",
+   "init": "d",
+   "fin": "u",
+   "tone": 2
+  },
+  {
+   "ch": "猿",
+   "init": "y",
+   "fin": "uan",
+   "tone": 2
+  },
+  {
+   "ch": "珠",
+   "init": "zh",
+   "fin": "u",
+   "tone": 1
+  },
+  {
+   "ch": "琴",
+   "init": "q",
+   "fin": "in",
+   "tone": 2
+  },
+  {
+   "ch": "瓶",
+   "init": "p",
+   "fin": "ing",
+   "tone": 2
+  },
+  {
+   "ch": "生",
+   "init": "sh",
+   "fin": "eng",
+   "tone": 1
+  },
+  {
+   "ch": "画",
+   "init": "h",
+   "fin": "ua",
+   "tone": 4
+  },
+  {
+   "ch": "疑",
+   "init": "y",
+   "fin": "i",
+   "tone": 2
+  },
+  {
+   "ch": "白",
+   "init": "b",
+   "fin": "ai",
+   "tone": 2
+  },
+  {
+   "ch": "百",
+   "init": "b",
+   "fin": "ai",
+   "tone": 3
+  },
+  {
+   "ch": "皆",
+   "init": "j",
+   "fin": "ie",
+   "tone": 1
+  },
+  {
+   "ch": "益",
+   "init": "y",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "盗",
+   "init": "d",
+   "fin": "ao",
+   "tone": 4
+  },
+  {
+   "ch": "盘",
+   "init": "p",
+   "fin": "an",
+   "tone": 2
+  },
+  {
+   "ch": "目",
+   "init": "m",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "直",
+   "init": "zh",
+   "fin": "i",
+   "tone": 2
+  },
+  {
+   "ch": "相",
+   "init": "x",
+   "fin": "iang",
+   "tone": 1
+  },
+  {
+   "ch": "盾",
+   "init": "d",
+   "fin": "un",
+   "tone": 4
+  },
+  {
+   "ch": "看",
+   "init": "k",
+   "fin": "an",
+   "tone": 4
+  },
+  {
+   "ch": "眠",
+   "init": "m",
+   "fin": "ian",
+   "tone": 2
+  },
+  {
+   "ch": "睛",
+   "init": "j",
+   "fin": "ing",
+   "tone": 1
+  },
+  {
+   "ch": "矛",
+   "init": "m",
+   "fin": "ao",
+   "tone": 2
+  },
+  {
+   "ch": "知",
+   "init": "zh",
+   "fin": "i",
+   "tone": 1
+  },
+  {
+   "ch": "砥",
+   "init": "d",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "离",
+   "init": "l",
+   "fin": "i",
+   "tone": 2
+  },
+  {
+   "ch": "禾",
+   "init": "h",
+   "fin": "e",
+   "tone": 2
+  },
+  {
+   "ch": "秦",
+   "init": "q",
+   "fin": "in",
+   "tone": 2
+  },
+  {
+   "ch": "移",
+   "init": "y",
+   "fin": "i",
+   "tone": 2
+  },
+  {
+   "ch": "穷",
+   "init": "q",
+   "fin": "iong",
+   "tone": 2
+  },
+  {
+   "ch": "空",
+   "init": "k",
+   "fin": "ong",
+   "tone": 1
+  },
+  {
+   "ch": "童",
+   "init": "t",
+   "fin": "ong",
+   "tone": 2
+  },
+  {
+   "ch": "竹",
+   "init": "zh",
+   "fin": "u",
+   "tone": 2
+  },
+  {
+   "ch": "笠",
+   "init": "l",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "笨",
+   "init": "b",
+   "fin": "en",
+   "tone": 4
+  },
+  {
+   "ch": "笼",
+   "init": "l",
+   "fin": "ong",
+   "tone": 2
+  },
+  {
+   "ch": "箭",
+   "init": "j",
+   "fin": "ian",
+   "tone": 4
+  },
+  {
+   "ch": "粒",
+   "init": "l",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "精",
+   "init": "j",
+   "fin": "ing",
+   "tone": 1
+  },
+  {
+   "ch": "紫",
+   "init": "z",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "红",
+   "init": "h",
+   "fin": "ong",
+   "tone": 2
+  },
+  {
+   "ch": "线",
+   "init": "x",
+   "fin": "ian",
+   "tone": 4
+  },
+  {
+   "ch": "绝",
+   "init": "j",
+   "fin": "ue",
+   "tone": 2
+  },
+  {
+   "ch": "绿",
+   "init": "l",
+   "fin": "ü",
+   "tone": 4
+  },
+  {
+   "ch": "缝",
+   "init": "f",
+   "fin": "eng",
+   "tone": 4
+  },
+  {
+   "ch": "羊",
+   "init": "y",
+   "fin": "ang",
+   "tone": 2
+  },
+  {
+   "ch": "美",
+   "init": "m",
+   "fin": "ei",
+   "tone": 3
+  },
+  {
+   "ch": "翁",
+   "init": "w",
+   "fin": "eng",
+   "tone": 1
+  },
+  {
+   "ch": "而",
+   "init": "",
+   "fin": "er",
+   "tone": 2
+  },
+  {
+   "ch": "耳",
+   "init": "",
+   "fin": "er",
+   "tone": 3
+  },
+  {
+   "ch": "耻",
+   "init": "ch",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "股",
+   "init": "g",
+   "fin": "u",
+   "tone": 3
+  },
+  {
+   "ch": "胡",
+   "init": "h",
+   "fin": "u",
+   "tone": 2
+  },
+  {
+   "ch": "胸",
+   "init": "x",
+   "fin": "iong",
+   "tone": 1
+  },
+  {
+   "ch": "自",
+   "init": "z",
+   "fin": "i",
+   "tone": 4
+  },
+  {
+   "ch": "舍",
+   "init": "sh",
+   "fin": "e",
+   "tone": 3
+  },
+  {
+   "ch": "舞",
+   "init": "w",
+   "fin": "u",
+   "tone": 3
+  },
+  {
+   "ch": "舟",
+   "init": "zh",
+   "fin": "ou",
+   "tone": 1
+  },
+  {
+   "ch": "色",
+   "init": "s",
+   "fin": "e",
+   "tone": 4
+  },
+  {
+   "ch": "花",
+   "init": "h",
+   "fin": "ua",
+   "tone": 1
+  },
+  {
+   "ch": "苗",
+   "init": "m",
+   "fin": "iao",
+   "tone": 2
+  },
+  {
+   "ch": "苦",
+   "init": "k",
+   "fin": "u",
+   "tone": 3
+  },
+  {
+   "ch": "茅",
+   "init": "m",
+   "fin": "ao",
+   "tone": 2
+  },
+  {
+   "ch": "草",
+   "init": "c",
+   "fin": "ao",
+   "tone": 3
+  },
+  {
+   "ch": "荣",
+   "init": "r",
+   "fin": "ong",
+   "tone": 2
+  },
+  {
+   "ch": "药",
+   "init": "y",
+   "fin": "ao",
+   "tone": 4
+  },
+  {
+   "ch": "萤",
+   "init": "y",
+   "fin": "ing",
+   "tone": 2
+  },
+  {
+   "ch": "落",
+   "init": "l",
+   "fin": "uo",
+   "tone": 4
+  },
+  {
+   "ch": "蒙",
+   "init": "m",
+   "fin": "eng",
+   "tone": 2
+  },
+  {
+   "ch": "蓑",
+   "init": "s",
+   "fin": "uo",
+   "tone": 1
+  },
+  {
+   "ch": "虎",
+   "init": "h",
+   "fin": "u",
+   "tone": 3
+  },
+  {
+   "ch": "蛇",
+   "init": "sh",
+   "fin": "e",
+   "tone": 2
+  },
+  {
+   "ch": "蛙",
+   "init": "w",
+   "fin": "a",
+   "tone": 1
+  },
+  {
+   "ch": "行",
+   "init": "x",
+   "fin": "ing",
+   "tone": 2
+  },
+  {
+   "ch": "衣",
+   "init": "y",
+   "fin": "i",
+   "tone": 1
+  },
+  {
+   "ch": "补",
+   "init": "b",
+   "fin": "u",
+   "tone": 3
+  },
+  {
+   "ch": "西",
+   "init": "x",
+   "fin": "i",
+   "tone": 1
+  },
+  {
+   "ch": "观",
+   "init": "g",
+   "fin": "uan",
+   "tone": 1
+  },
+  {
+   "ch": "觉",
+   "init": "j",
+   "fin": "ue",
+   "tone": 2
+  },
+  {
+   "ch": "言",
+   "init": "y",
+   "fin": "an",
+   "tone": 2
+  },
+  {
+   "ch": "谁",
+   "init": "sh",
+   "fin": "ui",
+   "tone": 2
+  },
+  {
+   "ch": "豆",
+   "init": "d",
+   "fin": "ou",
+   "tone": 4
+  },
+  {
+   "ch": "起",
+   "init": "q",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "足",
+   "init": "z",
+   "fin": "u",
+   "tone": 2
+  },
+  {
+   "ch": "踪",
+   "init": "z",
+   "fin": "ong",
+   "tone": 1
+  },
+  {
+   "ch": "身",
+   "init": "sh",
+   "fin": "en",
+   "tone": 1
+  },
+  {
+   "ch": "转",
+   "init": "zh",
+   "fin": "uan",
+   "tone": 3
+  },
+  {
+   "ch": "轻",
+   "init": "q",
+   "fin": "ing",
+   "tone": 1
+  },
+  {
+   "ch": "辕",
+   "init": "y",
+   "fin": "uan",
+   "tone": 2
+  },
+  {
+   "ch": "辙",
+   "init": "zh",
+   "fin": "e",
+   "tone": 2
+  },
+  {
+   "ch": "辛",
+   "init": "x",
+   "fin": "in",
+   "tone": 1
+  },
+  {
+   "ch": "辞",
+   "init": "c",
+   "fin": "i",
+   "tone": 2
+  },
+  {
+   "ch": "过",
+   "init": "g",
+   "fin": "uo",
+   "tone": 4
+  },
+  {
+   "ch": "近",
+   "init": "j",
+   "fin": "in",
+   "tone": 4
+  },
+  {
+   "ch": "还",
+   "init": "h",
+   "fin": "ai",
+   "tone": 2
+  },
+  {
+   "ch": "迟",
+   "init": "ch",
+   "fin": "i",
+   "tone": 2
+  },
+  {
+   "ch": "途",
+   "init": "t",
+   "fin": "u",
+   "tone": 2
+  },
+  {
+   "ch": "遥",
+   "init": "y",
+   "fin": "ao",
+   "tone": 2
+  },
+  {
+   "ch": "酒",
+   "init": "j",
+   "fin": "iu",
+   "tone": 3
+  },
+  {
+   "ch": "采",
+   "init": "c",
+   "fin": "ai",
+   "tone": 3
+  },
+  {
+   "ch": "里",
+   "init": "l",
+   "fin": "i",
+   "tone": 3
+  },
+  {
+   "ch": "重",
+   "init": "zh",
+   "fin": "ong",
+   "tone": 4
+  },
+  {
+   "ch": "野",
+   "init": "y",
+   "fin": "e",
+   "tone": 3
+  },
+  {
+   "ch": "钓",
+   "init": "d",
+   "fin": "iao",
+   "tone": 4
+  },
+  {
+   "ch": "铃",
+   "init": "l",
+   "fin": "ing",
+   "tone": 2
+  },
+  {
+   "ch": "银",
+   "init": "y",
+   "fin": "in",
+   "tone": 2
+  },
+  {
+   "ch": "锄",
+   "init": "ch",
+   "fin": "u",
+   "tone": 2
+  },
+  {
+   "ch": "锲",
+   "init": "q",
+   "fin": "ie",
+   "tone": 4
+  },
+  {
+   "ch": "长",
+   "init": "zh",
+   "fin": "ang",
+   "tone": 3
+  },
+  {
+   "ch": "问",
+   "init": "w",
+   "fin": "en",
+   "tone": 4
+  },
+  {
+   "ch": "间",
+   "init": "j",
+   "fin": "ian",
+   "tone": 1
+  },
+  {
+   "ch": "闻",
+   "init": "w",
+   "fin": "en",
+   "tone": 2
+  },
+  {
+   "ch": "阴",
+   "init": "y",
+   "fin": "in",
+   "tone": 1
+  },
+  {
+   "ch": "陵",
+   "init": "l",
+   "fin": "ing",
+   "tone": 2
+  },
+  {
+   "ch": "隔",
+   "init": "g",
+   "fin": "e",
+   "tone": 2
+  },
+  {
+   "ch": "障",
+   "init": "zh",
+   "fin": "ang",
+   "tone": 4
+  },
+  {
+   "ch": "雕",
+   "init": "d",
+   "fin": "iao",
+   "tone": 1
+  },
+  {
+   "ch": "雨",
+   "init": "y",
+   "fin": "u",
+   "tone": 3
+  },
+  {
+   "ch": "雪",
+   "init": "x",
+   "fin": "ue",
+   "tone": 3
+  },
+  {
+   "ch": "霜",
+   "init": "sh",
+   "fin": "uang",
+   "tone": 1
+  },
+  {
+   "ch": "面",
+   "init": "m",
+   "fin": "ian",
+   "tone": 4
+  },
+  {
+   "ch": "项",
+   "init": "x",
+   "fin": "iang",
+   "tone": 4
+  },
+  {
+   "ch": "顾",
+   "init": "g",
+   "fin": "u",
+   "tone": 4
+  },
+  {
+   "ch": "风",
+   "init": "f",
+   "fin": "eng",
+   "tone": 1
+  },
+  {
+   "ch": "飞",
+   "init": "f",
+   "fin": "ei",
+   "tone": 1
+  },
+  {
+   "ch": "食",
+   "init": "sh",
+   "fin": "i",
+   "tone": 2
+  },
+  {
+   "ch": "餐",
+   "init": "c",
+   "fin": "an",
+   "tone": 1
+  },
+  {
+   "ch": "香",
+   "init": "x",
+   "fin": "iang",
+   "tone": 1
+  },
+  {
+   "ch": "马",
+   "init": "m",
+   "fin": "a",
+   "tone": 3
+  },
+  {
+   "ch": "高",
+   "init": "g",
+   "fin": "ao",
+   "tone": 1
+  },
+  {
+   "ch": "鸟",
+   "init": "n",
+   "fin": "iao",
+   "tone": 3
+  },
+  {
+   "ch": "鸡",
+   "init": "j",
+   "fin": "i",
+   "tone": 1
+  },
+  {
+   "ch": "鸣",
+   "init": "m",
+   "fin": "ing",
+   "tone": 2
+  },
+  {
+   "ch": "鹅",
+   "init": "",
+   "fin": "e",
+   "tone": 2
+  },
+  {
+   "ch": "黄",
+   "init": "h",
+   "fin": "uang",
+   "tone": 2
+  },
+  {
+   "ch": "龙",
+   "init": "l",
+   "fin": "ong",
+   "tone": 2
+  }
+ ]
+};
+  root.PVZ = root.PVZ || {};
+  root.PVZ.content = content;
+  if (typeof module !== 'undefined' && module.exports) module.exports = content;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function (root) {
+  'use strict';
+
+  const INITS = ['b','p','m','f','d','t','n','l','g','k','h','j','q','x','zh','ch','sh','r','z','c','s','y','w',''];
+  const FINS = ['a','o','e','i','u','ue','ai','ao','ou','an','en','er','ong','iao','iu','ui','ua','ei','ang','ia','in','ian'];
+  const TONES = ['1 阴平', '2 阳平', '3 上声', '4 去声'];
+  const TONE_EXAMPLES = [['一声', 'mā', '妈'], ['二声', 'má', '麻'], ['三声', 'mǎ', '马'], ['四声', 'mà', '骂']];
+
+  const LEVELS = [
+    {name: '拼音 · 单韵母起步', mode: 'pinyin', tier: 1, tones: false, zombies: 10, interval: 7, speed: 1.0, bucket: 0},
+    {name: '拼音 · 更多声母', mode: 'pinyin', tier: 2, tones: false, zombies: 16, interval: 6, speed: 1.1, bucket: 0.2},
+    {name: '拼音 · 声调挑战', mode: 'pinyin', tier: 3, tones: true, zombies: 24, interval: 5, speed: 1.2, bucket: 0.35},
+    {name: '古风 · 成语补全', mode: 'choice', source: ['idiom'], zombies: 12, interval: 6.5, speed: 1.0, bucket: 0.1, near: 1},
+    {name: '古风 · 古诗接句', mode: 'choice', source: ['poem'], zombies: 16, interval: 6, speed: 1.1, bucket: 0.2, near: 2},
+    {name: '古风 · 诗词成语合战', mode: 'choice', source: ['idiom', 'poem'], zombies: 24, interval: 5, speed: 1.2, bucket: 0.35, near: 3}
+  ];
+
+  const PLANTS = {
+    sunflower: {name: '向日葵', cost: 50, hp: 3},
+    peashooter: {name: '豌豆射手', cost: 100, hp: 3, cooldown: 1.4},
+    wallnut: {name: '坚果墙', cost: 50, hp: 12}
+  };
+
+  const ZOMBIES = {
+    normal: {hp: 1, speed: 14},
+    bucket: {hp: 2, speed: 12}
+  };
+
+  const GRID = {cols: 9, rows: 5, cell: 84, x0: 110, y0: 120};
+  const STAGE = {w: 900, h: 560};
+  const HOUSE_LINE = 100;
+
+  const api = {
+    INITS, FINS, TONES, TONE_EXAMPLES, LEVELS, PLANTS, ZOMBIES, GRID, STAGE, HOUSE_LINE
+  };
+  root.PVZ = root.PVZ || {};
+  root.PVZ.data = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function (root) {
+  'use strict';
+
+  function poolFor(level, syllables) {
+    return syllables.filter(s => s.tier <= level.tier);
+  }
+
+  function isComplete(pick, requireTone) {
+    return pick.init !== null && pick.fin !== null && (!requireTone || pick.tone !== null);
+  }
+
+  function isCorrect(syl, pick, requireTone) {
+    return pick.init === syl.init && pick.fin === syl.fin && (!requireTone || pick.tone === syl.tone);
+  }
+
+  function cardsFor(pool, data) {
+    return {
+      inits: data.INITS.filter(i => pool.some(s => s.init === i)),
+      fins: data.FINS.filter(f => pool.some(s => s.fin === f))
+    };
+  }
+
+  const api = { poolFor, isComplete, isCorrect, cardsFor };
+  root.PVZ = root.PVZ || {};
+  root.PVZ.pinyin = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function (root) {
+  'use strict';
+
+  const P = root.PVZ.pinyin;
+
+  function pick(arr, rng) {
+    return arr[Math.floor(rng() * arr.length)];
+  }
+
+  function shuffle(arr, rng) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function pickDistractors(answer, rest, nearCount, rng) {
+    const sameFin = shuffle(rest.filter(c => c.fin === answer.fin), rng);
+    const sameInit = shuffle(rest.filter(c => c.fin !== answer.fin && c.init === answer.init), rng);
+    const near = [...sameFin, ...sameInit].slice(0, nearCount);
+    const others = shuffle(rest.filter(c => !near.includes(c)), rng);
+    return [...near, ...others].slice(0, 3).map(c => c.ch);
+  }
+
+  const pinyin = {
+    ui: 'pinyin',
+    create(level, content, rng) {
+      const pool = P.poolFor(level, content.syllables);
+      return () => {
+        const s = pick(pool, rng);
+        return { kind: 'pinyin', label: s.py, answerText: `${s.py} ${s.hz}`, speak: s.hz, syl: s };
+      };
+    },
+    complete(pk, level) {
+      return P.isComplete(pk, level.tones);
+    },
+    correct(ch, pk, level) {
+      return P.isCorrect(ch.syl, pk, level.tones);
+    }
+  };
+
+  const choice = {
+    ui: 'choice',
+    create(level, content, rng) {
+      const useIdiom = level.source.includes('idiom');
+      const usePoem = level.source.includes('poem');
+      const readings = new Map(content.chars.map(c => [c.ch, c]));
+      const pool = content.chars;
+      return () => {
+        const fromIdiom = useIdiom && (!usePoem || rng() < 0.5);
+        const full = fromIdiom
+          ? pick(content.idioms, rng).text
+          : pick(pick(content.poems, rng).lines, rng);
+        const idx = Math.floor(rng() * full.length);
+        const answer = full[idx];
+        const visible = new Set(full);
+        const rest = pool.filter(c => c.ch !== answer && !visible.has(c.ch));
+        const distractors = pickDistractors(readings.get(answer) || { init: null, fin: null }, rest, level.near || 0, rng);
+        return {
+          kind: 'choice',
+          label: full.slice(0, idx) + '□' + full.slice(idx + 1),
+          answerText: full,
+          speak: full,
+          answer,
+          options: shuffle([answer, ...distractors], rng)
+        };
+      };
+    },
+    complete(pk) {
+      return pk.choice !== null;
+    },
+    correct(ch, pk) {
+      return pk.choice === ch.answer;
+    }
+  };
+
+  root.PVZ = root.PVZ || {};
+  root.PVZ.modes = { pinyin, choice };
+  if (typeof module !== 'undefined' && module.exports) module.exports = root.PVZ.modes;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function (root) {
+  'use strict';
+
+  const D = root.PVZ.data;
+  const P = root.PVZ.pinyin;
+  const M = root.PVZ.modes;
+  const { cell, x0, y0, cols, rows } = D.GRID;
+
+  const PEA_SPEED = 260;
+  const EAT_INTERVAL = 0.8;
+  const SKY_SUN_EVERY = 10;
+  const SKY_SUN_LIFE = 9;
+  const FLOWER_SUN_EVERY = 8;
+  const FLOWER_FIRST_SUN = 6;
+  const CORRECT_SUN = 15;
+  const WRONG_PUSH = 40;
+  const SUN_VALUE = 25;
+
+  const cellX = col => x0 + col * cell;
+  const cellY = row => y0 + row * cell;
+  const cellCX = col => cellX(col) + cell / 2;
+  const cellCY = row => cellY(row) + cell / 2;
+
+  function createRng(seed) {
+    let x = (seed >>> 0) || 1;
+    return () => {
+      x ^= x << 13;
+      x ^= x >>> 17;
+      x ^= x << 5;
+      return (x >>> 0) / 4294967296;
+    };
+  }
+
+  function createGame(level, rng, content) {
+    const r = rng || Math.random;
+    const c = content || root.PVZ.content;
+    return {
+      level,
+      rng: r,
+      nextChallenge: M[level.mode].create(level, c, r),
+      status: 'playing',
+      time: 0,
+      sun: 50,
+      lives: 3,
+      combo: 0,
+      bestCombo: 0,
+      cannons: 0,
+      killed: 0,
+      toSpawn: level.zombies,
+      spawnTimer: 3,
+      skySunTimer: SKY_SUN_EVERY,
+      plants: [],
+      zombies: [],
+      peas: [],
+      suns: [],
+      target: null,
+      pick: { init: null, fin: null, tone: null, choice: null },
+      nextId: 1
+    };
+  }
+
+  const nid = g => g.nextId++;
+
+  function tick(g, dt) {
+    const ev = [];
+    if (g.status !== 'playing') return ev;
+    g.time += dt;
+    spawn(g, dt);
+    sunDrops(g, dt);
+    plantsAct(g, dt, ev);
+    zombiesAct(g, dt, ev);
+    peasAct(g, dt, ev);
+    if (g.status === 'playing' && g.toSpawn === 0 && g.zombies.length === 0) {
+      g.status = 'won';
+      ev.push({ type: 'win' });
+    }
+    return ev;
+  }
+
+  function spawn(g, dt) {
+    if (g.toSpawn <= 0) return;
+    g.spawnTimer -= dt;
+    if (g.spawnTimer > 0) return;
+    g.spawnTimer = g.level.interval * (0.7 + g.rng() * 0.6);
+    g.toSpawn--;
+    const type = g.rng() < g.level.bucket ? 'bucket' : 'normal';
+    const def = D.ZOMBIES[type];
+    g.zombies.push({
+      id: nid(g),
+      type,
+      ch: g.nextChallenge(),
+      row: Math.floor(g.rng() * rows),
+      x: D.STAGE.w + 40,
+      hp: def.hp,
+      speed: def.speed * g.level.speed,
+      eating: null,
+      eatTimer: 0
+    });
+  }
+
+  function sunDrops(g, dt) {
+    g.skySunTimer -= dt;
+    if (g.skySunTimer <= 0) {
+      g.skySunTimer = SKY_SUN_EVERY;
+      g.suns.push({
+        id: nid(g),
+        x: 140 + g.rng() * 680,
+        y: 150 + g.rng() * 300,
+        value: SUN_VALUE,
+        life: SKY_SUN_LIFE
+      });
+    }
+    for (const s of g.suns) s.life -= dt;
+    g.suns = g.suns.filter(s => s.life > 0);
+  }
+
+  function plantsAct(g, dt, ev) {
+    for (const p of g.plants) {
+      p.timer -= dt;
+      if (p.type === 'sunflower' && p.timer <= 0) {
+        p.timer = FLOWER_SUN_EVERY;
+        g.suns.push({ id: nid(g), x: cellCX(p.col), y: cellCY(p.row), value: SUN_VALUE, life: SKY_SUN_LIFE });
+      }
+      if (p.type === 'peashooter' && p.timer <= 0 &&
+          g.zombies.some(z => z.row === p.row && z.x > cellCX(p.col) && z.x < D.STAGE.w)) {
+        p.timer = D.PLANTS.peashooter.cooldown;
+        g.peas.push({ id: nid(g), row: p.row, x: cellCX(p.col) + 30, dmg: 1 });
+        ev.push({ type: 'shoot' });
+      }
+    }
+  }
+
+  function zombiesAct(g, dt, ev) {
+    const reached = [];
+    for (const z of g.zombies) {
+      if (z.eating && !g.plants.includes(z.eating)) z.eating = null;
+      if (!z.eating) {
+        const blocker = g.plants.find(p => p.row === z.row && Math.abs(z.x - cellCX(p.col)) <= cell / 2 + 8);
+        if (blocker) z.eating = blocker;
+        else z.x -= z.speed * dt;
+      }
+      if (z.eating) {
+        z.eatTimer += dt;
+        if (z.eatTimer >= EAT_INTERVAL) {
+          z.eatTimer = 0;
+          z.eating.hp--;
+          if (z.eating.hp <= 0) {
+            g.plants = g.plants.filter(p => p !== z.eating);
+            z.eating = null;
+            ev.push({ type: 'plantDied' });
+          }
+        }
+      }
+      if (z.x <= D.HOUSE_LINE) reached.push(z);
+    }
+    for (const z of reached) {
+      g.zombies = g.zombies.filter(o => o !== z);
+      if (g.target === z.id) g.target = null;
+      g.lives--;
+      ev.push({ type: 'lifeLost' });
+      if (g.lives <= 0) {
+        g.lives = 0;
+        g.status = 'lost';
+        ev.push({ type: 'lose' });
+        return;
+      }
+    }
+  }
+
+  function peasAct(g, dt, ev) {
+    for (const p of g.peas) p.x += PEA_SPEED * dt;
+    const alive = [];
+    for (const p of g.peas) {
+      if (p.x > D.STAGE.w) continue;
+      const z = g.zombies.find(o => o.row === p.row && Math.abs(o.x - p.x) <= 30);
+      if (z) {
+        damage(g, z, p.dmg, ev);
+        ev.push({ type: 'hit', row: z.row, x: z.x });
+      } else {
+        alive.push(p);
+      }
+    }
+    g.peas = alive;
+  }
+
+  function damage(g, z, dmg, ev) {
+    z.hp -= dmg;
+    if (z.hp > 0) return;
+    g.zombies = g.zombies.filter(o => o !== z);
+    if (g.target === z.id) g.target = null;
+    g.killed++;
+    ev.push({ type: 'kill', row: z.row, x: z.x });
+  }
+
+  function nearest(g) {
+    return g.zombies.reduce((a, b) => (a === null || b.x < a.x ? b : a), null);
+  }
+
+  function autoTarget(g) {
+    if (g.zombies.some(z => z.id === g.target)) return;
+    const z = nearest(g);
+    g.target = z ? z.id : null;
+  }
+
+  function previewTarget(g) {
+    return g.zombies.find(z => z.id === g.target) || nearest(g);
+  }
+
+  function placePlant(g, type, row, col) {
+    const def = D.PLANTS[type];
+    if (g.status !== 'playing' || !def || g.sun < def.cost) return false;
+    if (row < 0 || row >= rows || col < 0 || col >= cols) return false;
+    if (g.plants.some(p => p.row === row && p.col === col)) return false;
+    g.sun -= def.cost;
+    g.plants.push({
+      id: nid(g),
+      type,
+      row,
+      col,
+      hp: def.hp,
+      timer: type === 'sunflower' ? FLOWER_FIRST_SUN : 0
+    });
+    return true;
+  }
+
+  function collectSun(g, id) {
+    const s = g.suns.find(o => o.id === id);
+    if (!s) return false;
+    g.suns = g.suns.filter(o => o !== s);
+    g.sun += s.value;
+    return true;
+  }
+
+  function setTarget(g, id) {
+    if (g.zombies.some(z => z.id === id)) g.target = id;
+  }
+
+  function setPick(g, kind, value) {
+    g.pick[kind] = g.pick[kind] === value ? null : value;
+  }
+
+  function clearPick(g) {
+    g.pick = { init: null, fin: null, tone: null, choice: null };
+  }
+
+  function answer(g) {
+    const ev = [];
+    if (g.status !== 'playing') return ev;
+    const mode = M[g.level.mode];
+    if (!mode.complete(g.pick, g.level)) return ev;
+    autoTarget(g);
+    const z = g.zombies.find(o => o.id === g.target);
+    if (!z) {
+      clearPick(g);
+      ev.push({ type: 'noTarget' });
+      return ev;
+    }
+    if (mode.correct(z.ch, g.pick, g.level)) {
+      g.combo++;
+      g.bestCombo = Math.max(g.bestCombo, g.combo);
+      g.sun += CORRECT_SUN;
+      ev.push({ type: 'correct', row: z.row, x: z.x, ch: z.ch });
+      damage(g, z, 1, ev);
+      if (g.combo % 3 === 0) {
+        g.cannons++;
+        ev.push({ type: 'cannonReady' });
+      }
+    } else {
+      g.combo = 0;
+      for (const o of g.zombies) if (o.row === z.row) o.x -= WRONG_PUSH;
+      ev.push({ type: 'wrong', row: z.row, x: z.x, answer: z.ch });
+    }
+    clearPick(g);
+    return ev;
+  }
+
+  function useCannon(g) {
+    const ev = [];
+    if (g.status !== 'playing' || g.cannons <= 0) return ev;
+    g.cannons--;
+    for (const z of [...g.zombies]) damage(g, z, z.hp, ev);
+    ev.push({ type: 'cannon' });
+    return ev;
+  }
+
+  const api = {
+    createRng, createGame, tick, placePlant, collectSun, setTarget, setPick, clearPick,
+    answer, useCannon, autoTarget, previewTarget, cellX, cellY, cellCX, cellCY
+  };
+  root.PVZ = root.PVZ || {};
+  root.PVZ.game = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function (root) {
+  'use strict';
+
+  let ctx = null;
+
+  function ensure() {
+    if (!ctx) {
+      const AC = root.AudioContext || root.webkitAudioContext;
+      if (AC) ctx = new AC();
+    }
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  function tone(freq, dur, type, vol, delay) {
+    const c = ensure();
+    if (!c) return;
+    const t = c.currentTime + (delay || 0);
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g);
+    g.connect(c.destination);
+    o.start(t);
+    o.stop(t + dur + 0.02);
+  }
+
+  const sfx = {
+    correct() { tone(660, 0.12, 'sine', 0.1); tone(880, 0.16, 'sine', 0.1, 0.09); },
+    wrong() { tone(170, 0.3, 'sawtooth', 0.06); },
+    shoot() { tone(980, 0.05, 'square', 0.015); },
+    kill() { tone(420, 0.15, 'triangle', 0.08); },
+    collect() { tone(1320, 0.08, 'triangle', 0.07); },
+    place() { tone(220, 0.1, 'triangle', 0.1); },
+    cannon() { tone(90, 0.7, 'sawtooth', 0.12); },
+    lifeLost() { tone(120, 0.5, 'square', 0.1); },
+    win() { tone(523, 0.15, 'triangle', 0.1); tone(659, 0.15, 'triangle', 0.1, 0.15); tone(784, 0.3, 'triangle', 0.1, 0.3); }
+  };
+
+  function speak(text) {
+    if (!text || !('speechSynthesis' in root)) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-CN';
+    root.speechSynthesis.cancel();
+    root.speechSynthesis.speak(u);
+  }
+
+  root.PVZ = root.PVZ || {};
+  root.PVZ.audio = { sfx, speak, unlock: ensure };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function (root) {
+  'use strict';
+
+  const G = root.PVZ.game;
+  const D = root.PVZ.data;
+  const $ = s => document.querySelector(s);
+
+  const layer = {};
+  const maps = { plants: new Map(), zombies: new Map(), peas: new Map(), suns: new Map() };
+  const seedEls = new Map();
+  const cells = [];
+  let H = {};
+
+  function el(tag, cls) {
+    const n = document.createElement(tag);
+    n.className = cls;
+    return n;
+  }
+
+  function spr(id, w, h) {
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><use href="#${id}" width="${w}" height="${h}"/></svg>`;
+  }
+
+  function place(n, x, y) {
+    n.style.transform = `translate(${x}px, ${y}px)`;
+  }
+
+  function sync(map, items, parent, make, update) {
+    const alive = new Set();
+    for (const it of items) {
+      alive.add(it.id);
+      let n = map.get(it.id);
+      if (!n) {
+        n = make(it);
+        map.set(it.id, n);
+        parent.appendChild(n);
+      }
+      update(n, it);
+    }
+    for (const [id, n] of map) {
+      if (!alive.has(id)) {
+        n.remove();
+        map.delete(id);
+      }
+    }
+  }
+
+  const makers = {
+    plant(p) {
+      const n = el('div', 'plant');
+      n.innerHTML = spr(p.type, 72, 72);
+      return n;
+    },
+    zombie(z) {
+      const n = el('div', 'zombie');
+      n.innerHTML = `<div class="py"></div>${spr(z.type === 'bucket' ? 'zombie-bucket' : 'zombie-normal', 80, 110)}`;
+      if (z.ch.kind === 'choice') n.querySelector('.py').classList.add('zh');
+      const id = z.id;
+      n.addEventListener('click', e => { e.stopPropagation(); H.onZombie(id); });
+      return n;
+    },
+    pea() {
+      const n = el('div', 'pea');
+      n.innerHTML = spr('pea', 16, 16);
+      return n;
+    },
+    sun(s) {
+      const n = el('div', 'sun');
+      n.innerHTML = spr('sun', 56, 56);
+      const id = s.id;
+      n.addEventListener('click', () => H.onSun(id));
+      return n;
+    }
+  };
+
+  function init(handlers) {
+    H = handlers;
+    layer.grid = $('#grid');
+    layer.plants = $('#layer-plants');
+    layer.zombies = $('#layer-zombies');
+    layer.peas = $('#layer-peas');
+    layer.suns = $('#layer-suns');
+    layer.fx = $('#layer-fx');
+
+    const { cols, rows } = D.GRID;
+    for (let row = 0; row < rows; row++) {
+      const house = el('div', 'house');
+      house.innerHTML = spr('house', 90, 80);
+      place(house, 2, G.cellY(row) + 2);
+      layer.grid.appendChild(house);
+      for (let col = 0; col < cols; col++) {
+        const c = el('div', 'cell' + ((row + col) % 2 ? ' alt' : ''));
+        place(c, G.cellX(col), G.cellY(row));
+        c.addEventListener('click', () => H.onCell(row, col));
+        layer.grid.appendChild(c);
+        cells.push(c);
+      }
+    }
+
+    const bar = $('#seeds');
+    for (const type of Object.keys(D.PLANTS)) {
+      const def = D.PLANTS[type];
+      const b = el('button', 'seed');
+      b.innerHTML = `${spr(type, 44, 44)}<span>${def.name}</span><b>${def.cost}</b>`;
+      b.setAttribute('aria-label', `${def.name}，需要 ${def.cost} 阳光`);
+      b.addEventListener('click', () => H.onSeed(type));
+      bar.appendChild(b);
+      seedEls.set(type, { el: b, cost: def.cost });
+    }
+  }
+
+  function reset() {
+    for (const map of Object.values(maps)) {
+      for (const n of map.values()) n.remove();
+      map.clear();
+    }
+    for (const n of [...layer.fx.children]) n.remove();
+  }
+
+  function draw(g, seedType) {
+    sync(maps.plants, g.plants, layer.plants, makers.plant,
+      (n, p) => place(n, G.cellX(p.col) + 6, G.cellY(p.row) + 6));
+
+    sync(maps.zombies, g.zombies, layer.zombies, makers.zombie, (n, z) => {
+      place(n, z.x - 40, G.cellCY(z.row) - 88);
+      const py = n.querySelector('.py');
+      if (py.textContent !== z.ch.label) py.textContent = z.ch.label;
+      n.classList.toggle('target', g.target === z.id);
+      n.classList.toggle('eating', !!z.eating);
+    });
+
+    sync(maps.peas, g.peas, layer.peas, makers.pea,
+      (n, p) => place(n, p.x - 8, G.cellCY(p.row) - 14));
+
+    sync(maps.suns, g.suns, layer.suns, makers.sun,
+      (n, s) => place(n, s.x - 28, s.y - 28));
+
+    $('#sun-val').textContent = g.sun;
+    $('#hearts').textContent = '❤'.repeat(g.lives);
+    $('#progress-bar').style.width = (100 * g.killed / g.level.zombies) + '%';
+    $('#combo').textContent = g.combo >= 2 ? `连对 ×${g.combo}` : '';
+    const cb = $('#btn-cannon');
+    cb.textContent = `合体大炮 ×${g.cannons}`;
+    cb.disabled = g.cannons === 0;
+    for (const c of cells) c.classList.toggle('ready', !!seedType);
+    for (const [type, s] of seedEls) {
+      s.el.disabled = g.sun < s.cost;
+      s.el.classList.toggle('sel', seedType === type);
+    }
+  }
+
+  function fx(text, x, y, cls) {
+    const n = el('div', 'fx ' + (cls || ''));
+    n.textContent = text;
+    place(n, x, y);
+    layer.fx.appendChild(n);
+    setTimeout(() => n.remove(), 900);
+  }
+
+  root.PVZ.render = { init, reset, draw, fx };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function (root) {
+  'use strict';
+
+  const SEED_KEYS = ['q', 'w', 'e'];
+  const DIGIT_KEYS = ['1', '2', '3', '4'];
+
+  function keyAction(key, ctx) {
+    if (key === ' ') return { type: 'cannon' };
+    const k = key.length === 1 ? key.toLowerCase() : key;
+    const seed = SEED_KEYS.indexOf(k);
+    if (seed >= 0) return { type: 'seed', index: seed };
+    const digit = DIGIT_KEYS.indexOf(k);
+    if (digit >= 0) {
+      if (ctx.mode === 'choice') return { type: 'option', index: digit };
+      if (ctx.mode === 'pinyin' && ctx.tones) return { type: 'tone', value: digit + 1 };
+    }
+    return null;
+  }
+
+  const api = { keyAction, SEED_KEYS, DIGIT_KEYS };
+  root.PVZ = root.PVZ || {};
+  root.PVZ.keys = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function (root) {
+  'use strict';
+
+  const PANEL_H = 280;
+  const MIN_SCALE = 0.5;
+  const COARSE_MAX_SCALE = 1.2;
+
+  function computeScale(win, stage, coarse) {
+    const maxScale = coarse ? COARSE_MAX_SCALE : 1;
+    const byWidth = (win.w - 16) / stage.w;
+    const byHeight = (win.h - PANEL_H) / stage.h;
+    return Math.max(MIN_SCALE, Math.min(maxScale, byWidth, byHeight));
+  }
+
+  const api = { computeScale, PANEL_H };
+  root.PVZ = root.PVZ || {};
+  root.PVZ.layout = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function (root) {
+  'use strict';
+
+  const PVZ = root.PVZ;
+  const D = PVZ.data;
+  const P = PVZ.pinyin;
+  const G = PVZ.game;
+  const R = PVZ.render;
+  const A = PVZ.audio;
+  const C = PVZ.content;
+  const SAVE_KEY = 'pinyin-gufeng-zombies-save-v1';
+  const STEP = 1 / 60;
+  const $ = s => document.querySelector(s);
+
+  let g = null;
+  let levelIndex = 0;
+  let seedType = null;
+  let paused = false;
+  let raf = 0;
+  let last = 0;
+  let acc = 0;
+  let cardEls = [];
+  let choiceEls = [];
+  let choiceKey = null;
+  const save = readSave();
+
+  function readSave() {
+    try {
+      return Object.assign({ unlocked: 1, stars: {} }, JSON.parse(localStorage.getItem(SAVE_KEY)));
+    } catch (e) {
+      return { unlocked: 1, stars: {} };
+    }
+  }
+
+  function writeSave() {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* storage unavailable */ }
+  }
+
+  function msg(t) { $('#msg').textContent = t; }
+
+  let lastStatus = '';
+  function setStatus(html) {
+    if (html === lastStatus) return;
+    lastStatus = html;
+    $('#status').innerHTML = html;
+  }
+
+  function fit() {
+    const coarse = root.matchMedia('(pointer:coarse)').matches;
+    const s = PVZ.layout.computeScale({ w: window.innerWidth, h: window.innerHeight }, D.STAGE, coarse);
+    $('#stage-wrap').style.width = D.STAGE.w * s + 'px';
+    $('#stage-wrap').style.height = D.STAGE.h * s + 'px';
+    $('#stage').style.transform = `scale(${s})`;
+    $('#panel').style.width = D.STAGE.w * s + 'px';
+  }
+
+  function showOverlay(title, body, buttons) {
+    $('#ov-title').textContent = title;
+    $('#ov-body').textContent = body;
+    const box = $('#ov-buttons');
+    box.innerHTML = '';
+    for (const b of buttons) {
+      const btn = document.createElement('button');
+      btn.textContent = b.label;
+      if (b.alt) btn.className = 'alt';
+      btn.disabled = !!b.disabled;
+      btn.onclick = b.onClick;
+      box.appendChild(btn);
+    }
+    $('#overlay').hidden = false;
+  }
+
+  function hideOverlay() { $('#overlay').hidden = true; }
+
+  function showMenu() {
+    g = null;
+    cancelAnimationFrame(raf);
+    const buttons = D.LEVELS.map((lv, i) => {
+      const unlocked = i + 1 <= save.unlocked;
+      const stars = save.stars[i + 1] || 0;
+      const tag = unlocked ? ` ${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}` : '（未解锁）';
+      return { label: lv.name + tag, disabled: !unlocked, onClick: () => startLevel(i) };
+    });
+    buttons.push({ label: '拼音图鉴 · 古风典籍', alt: true, onClick: showLearn });
+    showOverlay('拼音古风大战僵尸',
+      '拼音关：点僵尸锁定，依次点声母、韵母拼读。古风关：点僵尸锁定，选出缺失的字。拼对发射豌豆，拼错草坪前进，连对三次充能「合体大炮」。',
+      buttons);
+  }
+
+  function showEnd(won) {
+    const hasNext = won && levelIndex + 1 < D.LEVELS.length;
+    const body = `消灭 ${g.killed} 只僵尸，最高连对 ${g.bestCombo}。` + (won ? ` 剩余 ${g.lives} 颗心。` : '');
+    const buttons = [];
+    if (hasNext) buttons.push({ label: '下一关', onClick: () => startLevel(levelIndex + 1) });
+    buttons.push({ label: '再玩一次', onClick: () => startLevel(levelIndex) });
+    buttons.push({ label: '选关', alt: true, onClick: showMenu });
+    showOverlay(won ? '通关！' : '僵尸进屋了', body, buttons);
+  }
+
+  function endLevel(won) {
+    if (won) {
+      save.stars[levelIndex + 1] = Math.max(save.stars[levelIndex + 1] || 0, g.lives);
+      save.unlocked = Math.max(save.unlocked, Math.min(levelIndex + 2, D.LEVELS.length));
+      writeSave();
+    }
+    showEnd(won);
+  }
+
+  function togglePause() {
+    if (!g || g.status !== 'playing') return;
+    paused = !paused;
+    if (paused) {
+      showOverlay('已暂停', '', [
+        { label: '继续', onClick: togglePause },
+        { label: '选关', alt: true, onClick: showMenu }
+      ]);
+    } else {
+      hideOverlay();
+    }
+  }
+
+  function showLearn() {
+    const grid = $('#learn-grid');
+    grid.innerHTML = '';
+    const section = (title, items, wide) => {
+      const h = document.createElement('h3');
+      h.textContent = title;
+      grid.appendChild(h);
+      const row = document.createElement('div');
+      row.className = 'tiles';
+      for (const it of items) {
+        const t = document.createElement('button');
+        t.className = 'tile' + (wide ? ' wide' : '');
+        t.innerHTML = `<b>${it.label}</b><span>${it.sample}</span>`;
+        t.onclick = () => A.speak(it.speak);
+        row.appendChild(t);
+      }
+      grid.appendChild(row);
+    };
+    const sampleOf = (key, val) => {
+      const s = C.syllables.find(x => x[key] === val);
+      return { sample: s ? `${s.py} ${s.hz}` : '', speak: s ? s.hz : '' };
+    };
+    section('声母', D.INITS.map(i => ({ label: i || '∅', ...sampleOf('init', i) })));
+    section('韵母', D.FINS.map(f => ({ label: f, ...sampleOf('fin', f) })));
+    section('声调', D.TONE_EXAMPLES.map(([name, py, hz]) => ({ label: name, sample: `${py} ${hz}`, speak: hz })));
+    section('成语释义', C.idioms.map(x => ({ label: x.text, sample: x.meaning, speak: x.text })), true);
+    section('古诗', C.poems.map(p => ({
+      label: p.title, sample: `${p.dynasty}·${p.author}`, speak: p.lines.join('，')
+    })), true);
+    $('#learn').hidden = false;
+  }
+
+  function startLevel(idx) {
+    levelIndex = idx;
+    g = G.createGame(D.LEVELS[idx], Math.random, C);
+    seedType = null;
+    paused = false;
+    acc = 0;
+    last = 0;
+    R.reset();
+    buildPanel();
+    hideOverlay();
+    msg(g.level.mode === 'pinyin'
+      ? '先选植物再点草坪种下；点僵尸锁定，然后拼读。'
+      : '先选植物再点草坪种下；选出僵尸句子里缺失的字。');
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(loop);
+  }
+
+  function loop(ts) {
+    if (!g) return;
+    if (!last) last = ts;
+    const dt = Math.min((ts - last) / 1000, 0.25);
+    last = ts;
+    if (g.status === 'playing' && !paused) {
+      acc += dt;
+      while (acc >= STEP && g.status === 'playing') {
+        handle(G.tick(g, STEP));
+        acc -= STEP;
+      }
+    }
+    R.draw(g, seedType);
+    updatePanel();
+    raf = requestAnimationFrame(loop);
+  }
+
+  function handle(events) {
+    for (const ev of events) {
+      switch (ev.type) {
+        case 'kill':
+          A.sfx.kill();
+          break;
+        case 'lifeLost':
+          A.sfx.lifeLost();
+          msg('僵尸进屋了，失去一颗心！');
+          break;
+        case 'correct':
+          A.sfx.correct();
+          msg(`答对了：${ev.ch.answerText}`);
+          A.speak(ev.ch.speak);
+          R.fx('+15', ev.x - 20, G.cellCY(ev.row) - 110, 'good');
+          break;
+        case 'wrong':
+          A.sfx.wrong();
+          msg(`答错了，正确答案是 ${ev.answer.answerText}`);
+          R.fx('答错啦', ev.x - 30, G.cellCY(ev.row) - 110, 'bad');
+          break;
+        case 'cannonReady':
+          msg('合体大炮已充能！');
+          break;
+        case 'noTarget':
+          msg('草坪上没有僵尸');
+          break;
+        case 'cannon':
+          A.sfx.cannon();
+          msg('合体大炮！清场');
+          break;
+        case 'win':
+          A.sfx.win();
+          endLevel(true);
+          break;
+        case 'lose':
+          endLevel(false);
+          break;
+      }
+    }
+  }
+
+  function buildPanel() {
+    const isPinyin = g.level.mode === 'pinyin';
+    $('#pinyin-panel').hidden = !isPinyin;
+    $('#choice-panel').hidden = isPinyin;
+    cardEls = [];
+    choiceEls = [];
+    choiceKey = null;
+    if (isPinyin) {
+      const { inits, fins } = P.cardsFor(C.syllables.filter(s => s.tier <= g.level.tier), D);
+      fillRow('#row-init', inits.map(v => ({ kind: 'init', value: v, label: v || '∅' })));
+      fillRow('#row-fin', fins.map(v => ({ kind: 'fin', value: v, label: v })));
+      $('#row-tone').hidden = !g.level.tones;
+      if (g.level.tones) {
+        fillRow('#row-tone', [1, 2, 3, 4].map(t => ({ kind: 'tone', value: t, label: D.TONES[t - 1] })));
+      }
+    }
+    $('#level-name').textContent = g.level.name;
+    updatePanel();
+  }
+
+  function fillRow(sel, items) {
+    const row = $(sel);
+    row.querySelectorAll('.card').forEach(n => n.remove());
+    for (const it of items) {
+      const b = document.createElement('button');
+      b.className = 'card ' + it.kind;
+      b.textContent = it.label;
+      b.onclick = () => onCard(it.kind, it.value);
+      row.appendChild(b);
+      cardEls.push({ kind: it.kind, value: it.value, el: b });
+    }
+  }
+
+  function renderChoices() {
+    const z = G.previewTarget(g);
+    const key = z ? z.id : 0;
+    if (key === choiceKey) return;
+    choiceKey = key;
+    const row = $('#row-choice');
+    row.querySelectorAll('.card').forEach(n => n.remove());
+    choiceEls = [];
+    $('#choice-sentence').textContent = z ? z.ch.label : '';
+    if (!z) return;
+    for (const opt of z.ch.options) {
+      const b = document.createElement('button');
+      b.className = 'card choice';
+      b.textContent = opt;
+      b.onclick = () => onCard('choice', opt);
+      row.appendChild(b);
+      choiceEls.push(b);
+    }
+  }
+
+  function updatePanel() {
+    if (!g) return;
+    if (g.level.mode === 'choice') {
+      renderChoices();
+      const z = G.previewTarget(g);
+      setStatus(z ? `目标：<b>${g.target ? '已锁定' : '自动选择最近的僵尸'}</b>` : '草坪上暂无僵尸');
+      return;
+    }
+    const p = g.pick;
+    const show = x => (x === null ? '?' : (x === '' ? '零声母' : x));
+    let s = `声母：<b>${show(p.init)}</b>　韵母：<b>${show(p.fin)}</b>`;
+    if (g.level.tones) s += `　声调：<b>${p.tone === null ? '?' : p.tone}</b>`;
+    s += `　目标：<b>${g.target ? '已锁定' : '未选择'}</b>`;
+    setStatus(s);
+    const cur = { init: p.init, fin: p.fin, tone: p.tone };
+    for (const c of cardEls) c.el.classList.toggle('sel', cur[c.kind] === c.value);
+  }
+
+  function onCard(kind, value) {
+    if (!g || g.status !== 'playing' || paused) return;
+    G.setPick(g, kind, value);
+    G.autoTarget(g);
+    handle(G.answer(g));
+    updatePanel();
+  }
+
+  function onCell(row, col) {
+    if (!g || g.status !== 'playing' || paused || !seedType) return;
+    if (G.placePlant(g, seedType, row, col)) {
+      A.sfx.place();
+      seedType = null;
+      msg('已种下');
+    } else {
+      const cost = D.PLANTS[seedType].cost;
+      msg(g.sun < cost ? '阳光不足' : '这里已经有植物了');
+    }
+  }
+
+  function onSeed(type) {
+    if (!g || g.status !== 'playing' || paused) return;
+    seedType = seedType === type ? null : type;
+    msg(seedType ? `点击草坪种下${D.PLANTS[seedType].name}` : '');
+  }
+
+  function onZombie(id) {
+    if (!g || paused) return;
+    G.setTarget(g, id);
+    updatePanel();
+  }
+
+  function onSun(id) {
+    if (!g || paused) return;
+    if (G.collectSun(g, id)) A.sfx.collect();
+  }
+
+  function onKey(e) {
+    if (e.key === 'Escape') { togglePause(); return; }
+    if (e.repeat || !g || paused || !$('#overlay').hidden || !$('#learn').hidden) return;
+    const act = PVZ.keys.keyAction(e.key, { mode: g.level.mode, tones: g.level.tones });
+    if (!act) return;
+    e.preventDefault();
+    if (document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.blur();
+    if (act.type === 'seed') {
+      onSeed(Object.keys(D.PLANTS)[act.index]);
+    } else if (act.type === 'cannon') {
+      handle(G.useCannon(g));
+      updatePanel();
+    } else if (act.type === 'option') {
+      const z = G.previewTarget(g);
+      if (z && z.ch.options && z.ch.options[act.index]) onCard('choice', z.ch.options[act.index]);
+    } else if (act.type === 'tone') {
+      onCard('tone', act.value);
+    }
+  }
+
+  root.addEventListener('resize', fit);
+  root.addEventListener('orientationchange', fit);
+  document.addEventListener('pointerdown', () => A.unlock());
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', onKey);
+
+  R.init({ onCell, onSeed, onZombie, onSun });
+  $('#btn-clear').onclick = () => { if (g) { G.clearPick(g); updatePanel(); } };
+  $('#btn-cannon').onclick = () => { if (g && !paused) { handle(G.useCannon(g)); updatePanel(); } };
+  $('#btn-pause').onclick = togglePause;
+  $('#learn-close').onclick = () => { $('#learn').hidden = true; };
+
+  fit();
+  showMenu();
+  if ('serviceWorker' in navigator && root.location.protocol.indexOf('http') === 0) {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* offline cache unavailable */ });
+  }
+})(window);
+
+</script>
+</body>
+</html>
