@@ -10,15 +10,28 @@
 <style>
 *{box-sizing:border-box}
 [hidden]{display:none !important}
-body{margin:0;background:#1e293b;font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#111;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:8px;user-select:none}
-#app{display:flex;flex-direction:column;align-items:flex-start}
+/* overflow-x 禁用横向滚动；纵向保留，竖排放不下时可滚动，内容不会被裁掉。 */
+body{margin:0;background:#1e293b;font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#111;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:8px;user-select:none;overflow-x:hidden;overflow-y:auto}
+#app{display:flex;flex-direction:column;align-items:flex-start;max-width:100%}
 
-#stage-wrap{position:relative;overflow:hidden;border-radius:12px}
-#stage{position:absolute;left:0;top:0;width:900px;height:560px;transform-origin:0 0;overflow:hidden;background:#3f6212}
-.layer{position:absolute;left:0;top:0;width:900px;height:560px;pointer-events:none}
+/* 宽屏（平板横屏、PC 宽窗口）：舞台在左，答题面板在右。
+   舞台因此能拿到接近整屏的高度，不会被面板挤扁。
+   面板高度由 fit() 设成与草坪等高，内容超出时在面板内部滚动。 */
+#app.side{flex-direction:row;align-items:flex-start;gap:10px}
+#app.side #panel{margin-top:0;flex:0 0 auto;align-self:flex-start;overflow-y:auto}
 
-#house-col{position:absolute;left:0;top:120px;width:100px;height:420px;background:#a16207}
-#grid{position:absolute;left:0;top:0;width:900px;height:560px}
+/* 矮窗口（横屏手机）压缩留白，把高度让给舞台。 */
+@media (max-height:520px){body{padding:4px}#panel{margin-top:6px;padding:8px}}
+
+/* #stage 用绝对定位并靠 transform 缩放，它的 900px 固有宽度不能参与父级宽度计算，
+   否则窄屏下会把 #app 撑出视口，再由 fit() 读到的视口宽度反向放大，形成正反馈。 */
+#stage-wrap{position:relative;overflow:hidden;border-radius:12px;flex:0 0 auto;max-width:100%}
+#stage{position:absolute;left:0;top:0;width:872px;height:630px;transform-origin:0 0;overflow:hidden;background:#3f6212}
+.layer{position:absolute;left:0;top:0;width:872px;height:630px;pointer-events:none}
+
+/* 草坪之外的部分用「泥土」铺底，避免舞台边缘露出空背景。 */
+#house-col{position:absolute;left:0;top:186px;width:116px;height:444px;background:#a16207}
+#grid{position:absolute;left:0;top:0;width:872px;height:630px}
 .cell{position:absolute;left:0;top:0;width:84px;height:84px;background:#84cc16;cursor:pointer}
 .cell.alt{background:#65a30d}
 .cell.ready{box-shadow:inset 0 0 0 3px rgba(254,240,138,.9)}
@@ -44,21 +57,22 @@ body{margin:0;background:#1e293b;font-family:"Microsoft YaHei","PingFang SC",san
 .fx.bad{color:#fca5a5}
 @keyframes floatup{from{opacity:1;margin-top:0}to{opacity:0;margin-top:-40px}}
 
-#hud{position:absolute;left:0;top:0;width:900px;height:110px;background:linear-gradient(#5b3a1e,#7c5230);color:#fff;z-index:10}
-#sun-box{position:absolute;left:12px;top:14px;display:flex;align-items:center;gap:6px;font-size:26px;font-weight:bold;background:rgba(0,0,0,.25);padding:4px 12px;border-radius:10px}
-#seeds{position:absolute;left:150px;top:10px;display:flex;gap:8px}
-.seed{width:86px;height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid #78350f;border-radius:8px;background:#fde68a;cursor:pointer;color:#111;font-family:inherit;padding:2px}
+#hud{position:absolute;left:0;top:0;width:872px;height:100px;background:linear-gradient(#5b3a1e,#7c5230);color:#fff;z-index:10}
+#sun-box{position:absolute;left:12px;top:10px;display:flex;align-items:center;gap:6px;font-size:26px;font-weight:bold;background:rgba(0,0,0,.25);padding:4px 12px;border-radius:10px}
+#seeds{position:absolute;left:150px;top:6px;display:flex;gap:8px}
+.seed{width:86px;height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid #78350f;border-radius:8px;background:#fde68a;cursor:pointer;color:#111;font-family:inherit;padding:2px}
 .seed span{font-size:13px}
 .seed b{font-size:14px}
 .seed.sel{outline:3px solid #facc15}
 .seed:disabled{filter:grayscale(.9);opacity:.55;cursor:default}
-#hearts{position:absolute;left:520px;top:14px;font-size:22px;color:#f43f5e;min-height:28px}
-#progress{position:absolute;left:520px;top:56px;width:160px;height:14px;background:rgba(0,0,0,.3);border-radius:7px;overflow:hidden}
+#hearts{position:absolute;left:470px;top:12px;font-size:22px;color:#f43f5e;min-height:28px}
+#progress{position:absolute;left:470px;top:48px;width:140px;height:14px;background:rgba(0,0,0,.3);border-radius:7px;overflow:hidden}
 #progress-bar{height:100%;width:0;background:#84cc16;transition:width .3s}
-#combo{position:absolute;left:520px;top:76px;font-size:16px;color:#facc15}
-#btn-cannon{position:absolute;left:700px;top:14px;width:180px;height:40px;border:0;border-radius:8px;background:#f59e0b;color:#111;font-size:16px;font-family:inherit;cursor:pointer}
+#combo{position:absolute;left:470px;top:68px;font-size:16px;color:#facc15}
+/* 右侧功能列：合体大炮与暂停按钮同宽上下排列，贴在状态栏右缘。 */
+#btn-cannon{position:absolute;right:10px;top:10px;width:196px;height:38px;border:0;border-radius:8px;background:#f59e0b;color:#111;font-size:16px;font-family:inherit;cursor:pointer}
 #btn-cannon:disabled{background:#64748b;color:#cbd5e1;cursor:default}
-#btn-pause{position:absolute;left:700px;top:60px;width:110px;height:34px;border:0;border-radius:8px;background:#e2e8f0;color:#111;font-size:14px;font-family:inherit;cursor:pointer}
+#btn-pause{position:absolute;right:10px;top:54px;width:196px;height:36px;border:0;border-radius:8px;background:#cbd5e1;color:#111;font-size:15px;font-family:inherit;cursor:pointer}
 
 #panel{margin-top:10px;background:#fff;border-radius:12px;padding:12px}
 #level-name{font-size:14px;color:#64748b;margin-bottom:4px}
@@ -83,10 +97,16 @@ body{margin:0;background:#1e293b;font-family:"Microsoft YaHei","PingFang SC",san
   button,.cell,.zombie,.sun,#stage{touch-action:manipulation}
   .card{min-height:52px;min-width:64px;font-size:24px;padding:10px 12px}
   .card.choice{min-width:76px;min-height:56px}
-  .seed{width:96px;height:100px}
+  /* 触屏下卡片放大，状态栏内的摆位随之收紧，保证都落在 100 像素高度内。 */
+  .seed{width:96px;height:88px}
   .seed span{font-size:15px}
-  #btn-cannon,#btn-pause{min-height:48px;font-size:18px}
-  #btn-pause{width:120px}
+  #seeds{top:6px}
+  #sun-box{top:10px}
+  #hearts{top:12px}
+  #progress{top:48px}
+  #combo{top:68px}
+  #btn-cannon{top:8px;right:8px;width:190px;height:40px;font-size:17px}
+  #btn-pause{top:52px;right:8px;width:190px;height:40px;font-size:17px}
   #btn-clear{min-height:48px;padding:10px 18px;font-size:16px}
   .box button{min-height:52px;font-size:20px}
   .tile{min-height:72px}
@@ -3353,8 +3373,15 @@ body{margin:0;background:#1e293b;font-family:"Microsoft YaHei","PingFang SC",san
     bucket: {hp: 2, speed: 12}
   };
 
-  const GRID = {cols: 9, rows: 5, cell: 84, x0: 110, y0: 120};
-  const STAGE = {w: 900, h: 560};
+  const GRID = {cols: 9, rows: 5, cell: 84, x0: 116, y0: 190};
+  /**
+   * 舞台设计尺寸。
+   *
+   * 草坪上方要留出一条走道：僵尸贴图高 110，绘制时按格子中线向上偏 88 像素定位，
+   * 顶排僵尸头顶因此高出格子中线 88 像素，其上的拼音标签还要再高 14 像素。
+   * 这段空间必须留在状态栏下方，否则顶排僵尸会被盖住。
+   */
+  const STAGE = {w: 872, h: 630};
   const HOUSE_LINE = 100;
 
   const api = {
@@ -4028,18 +4055,119 @@ body{margin:0;background:#1e293b;font-family:"Microsoft YaHei","PingFang SC",san
 (function (root) {
   'use strict';
 
-  const PANEL_H = 280;
-  const MIN_SCALE = 0.5;
+  /** 页面四周留白，避开刘海、底部手势条与浏览器 UI。 */
+  const PAD = 16;
+  /** 舞台与面板之间的间距。 */
+  const GAP = 10;
+  /**
+   * 面板可读宽度区间。
+   *
+   * 并排时面板不与舞台同宽：太窄拼音卡片会挤成一条，
+   * 太宽又会抢走舞台的空间。
+   */
+  const PANEL_MIN_W = 340;
+  const PANEL_MAX_W = 520;
+  /** 舞台缩放下限。低于此值拼音卡片已无法辨认。 */
+  const MIN_SCALE = 0.34;
+  /** 粗指针（触屏）没有最小字号顾虑，允许放大到 1.2；鼠标设备限制为 1。 */
   const COARSE_MAX_SCALE = 1.2;
+  const FINE_MAX_SCALE = 1;
 
-  function computeScale(win, stage, coarse) {
-    const maxScale = coarse ? COARSE_MAX_SCALE : 1;
-    const byWidth = (win.w - 16) / stage.w;
-    const byHeight = (win.h - PANEL_H) / stage.h;
-    return Math.max(MIN_SCALE, Math.min(maxScale, byWidth, byHeight));
+  /**
+   * 面板高度的兜底估值，仅用于无法测量时的粗算。
+   *
+   * 真实高度由调用方从 DOM 量出后传入，这里只作缺省值。
+   */
+  const PANEL_H = 300;
+
+  /**
+   * 面板（用户操作区）的尺寸。
+   *
+   * 并排时与舞台等高，上下时与舞台等宽，两块因此边缘对齐。
+   * 并排的宽度由可用宽度决定，上下时高度由内容决定，都不在这里指定。
+   *
+   * @param {'side'|'stack'} mode 布局模式
+   * @param {number} scale 舞台缩放
+   * @param {{w:number,h:number}} stage 舞台设计尺寸
+   * @param {number} [panelW] 并排时的面板宽度
+   */
+  function panelSize(mode, scale, stage, panelW) {
+    if (mode === 'side') return { width: panelW, height: stage.h * scale };
+    return { width: stage.w * scale, height: null };
   }
 
-  const api = { computeScale, PANEL_H };
+  function clampScale(scale, coarse) {
+    const cap = coarse ? COARSE_MAX_SCALE : FINE_MAX_SCALE;
+    return Math.max(MIN_SCALE, Math.min(cap, scale));
+  }
+
+  /**
+   * 推演竖排布局：面板在舞台正下方，宽度跟随舞台。
+   *
+   * 面板高度不随缩放变化（内容换行数由面板宽度决定），
+   * 因此可用高度要先扣掉面板实际高度与间距。
+   */
+  function planStacked(availW, availH, stage, coarse, panelH) {
+    const scale = clampScale(
+      Math.min(availW / stage.w, (availH - panelH - GAP) / stage.h),
+      coarse,
+    );
+    return { mode: 'stack', scale, panelW: stage.w * scale };
+  }
+
+  /**
+   * 推演并排布局：面板独立成列，不占舞台高度。
+   *
+   * 先按面板最小宽度算舞台缩放，再把舞台用不完的宽度还给面板，
+   * 用新宽度复算一次缩放，得到自洽的缩放与面板宽度。
+   */
+  function planSide(availW, availH, stage, coarse) {
+    let panelW = PANEL_MIN_W;
+    let scale = clampScale(
+      Math.min((availW - GAP - panelW) / stage.w, availH / stage.h),
+      coarse,
+    );
+    panelW = Math.max(PANEL_MIN_W, Math.min(PANEL_MAX_W, availW - GAP - stage.w * scale));
+    scale = clampScale(
+      Math.min((availW - GAP - panelW) / stage.w, availH / stage.h),
+      coarse,
+    );
+    return { mode: 'side', scale, panelW };
+  }
+
+  /**
+   * 选择布局，给出舞台缩放与面板宽度。
+   *
+   * 竖排把面板堆在舞台下方，宽屏时舞台只能拿到一部分高度；
+   * 并排让面板独立成列，舞台吃满整个高度。宽度放得下两列且并排确实更大时选并排，
+   * 否则保持竖排。
+   *
+   * @param {number} vw 视口宽度
+   * @param {number} vh 视口高度
+   * @param {{w:number,h:number}} stage 舞台设计尺寸
+   * @param {boolean} coarse 是否为触屏等粗指针设备
+   * @param {number} panelH 竖排时面板的实际高度
+   */
+  function plan(vw, vh, stage, coarse, panelH) {
+    const availW = vw - PAD;
+    const availH = vh - PAD;
+    const stacked = planStacked(availW, availH, stage, coarse, panelH);
+    const side = planSide(availW, availH, stage, coarse);
+    const sideFits = availW >= stage.w * MIN_SCALE + GAP + PANEL_MIN_W;
+    if (sideFits && side.scale > stacked.scale) return side;
+    return stacked;
+  }
+
+  /**
+   * 单值缩放估算。
+   *
+   * 需要同时知道布局模式与面板宽度时请用 {@link plan}。
+   */
+  function computeScale(win, stage, coarse) {
+    return plan(win.w, win.h, stage, coarse, PANEL_H).scale;
+  }
+
+  const api = { plan, computeScale, panelSize, PAD, GAP, PANEL_H, PANEL_MIN_W, PANEL_MAX_W, MIN_SCALE };
   root.PVZ = root.PVZ || {};
   root.PVZ.layout = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
@@ -4085,22 +4213,78 @@ body{margin:0;background:#1e293b;font-family:"Microsoft YaHei","PingFang SC",san
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* storage unavailable */ }
   }
 
-  function msg(t) { $('#msg').textContent = t; }
+  function msg(t) {
+    const el = $('#msg');
+    if (el.textContent === t) return;
+    el.textContent = t;
+    scheduleFit();
+  }
 
   let lastStatus = '';
   function setStatus(html) {
     if (html === lastStatus) return;
     lastStatus = html;
     $('#status').innerHTML = html;
+    scheduleFit();
   }
 
+  /**
+   * 按视口重排舞台与操作面板。
+   *
+   * 面板高度取决于它自己的宽度（拼音卡片换行数会变），宽度又取决于舞台缩放，
+   * 两者互相依赖。这里先按舞台同宽量出面板高度，再交给 PVZ.layout.plan 统一决策，
+   * 得到布局模式、舞台缩放与面板宽度三项结果。
+   *
+   * 两块按摆放方向对齐：并排时等高，上下时等宽。
+   */
   function fit() {
     const coarse = root.matchMedia('(pointer:coarse)').matches;
-    const s = PVZ.layout.computeScale({ w: window.innerWidth, h: window.innerHeight }, D.STAGE, coarse);
-    $('#stage-wrap').style.width = D.STAGE.w * s + 'px';
-    $('#stage-wrap').style.height = D.STAGE.h * s + 'px';
+    const app = $('#app');
+    const panel = $('#panel');
+    const wrap = $('#stage-wrap');
+    // 必须取布局视口而不是 window.innerWidth：后者在内容溢出时会被撑大，
+    // 按它算出的缩放又会让内容更宽，形成正反馈。
+    const de = document.documentElement;
+    const vw = de.clientWidth;
+    const vh = de.clientHeight;
+
+    // 量面板尺寸前先清掉上一次的固定尺寸，否则量到的是上一轮的约束值。
+    app.classList.remove('side');
+    panel.style.width = '';
+    panel.style.height = '';
+
+    const estW = PVZ.layout.plan(vw, vh, D.STAGE, coarse, PVZ.layout.PANEL_H).scale * D.STAGE.w;
+    panel.style.width = estW + 'px';
+    const panelH = panel.getBoundingClientRect().height;
+
+    const chosen = PVZ.layout.plan(vw, vh, D.STAGE, coarse, panelH);
+    const s = chosen.scale;
+    wrap.style.width = D.STAGE.w * s + 'px';
+    wrap.style.height = D.STAGE.h * s + 'px';
     $('#stage').style.transform = `scale(${s})`;
-    $('#panel').style.width = D.STAGE.w * s + 'px';
+
+    const size = PVZ.layout.panelSize(chosen.mode, s, D.STAGE, chosen.panelW);
+    panel.style.width = size.width + 'px';
+    if (chosen.mode === 'side') {
+      app.classList.add('side');
+      panel.style.height = size.height + 'px';
+    }
+  }
+
+  /**
+   * 内容变化后重排。
+   *
+   * 面板会因关卡切换、提示文案变长而改变高度，这些都不触发 resize，
+   * 需要主动复算一次，否则舞台会压到面板上或留下大片空白。
+   */
+  let fitPending = false;
+  function scheduleFit() {
+    if (fitPending) return;
+    fitPending = true;
+    root.requestAnimationFrame(() => {
+      fitPending = false;
+      fit();
+    });
   }
 
   function showOverlay(title, body, buttons) {
@@ -4294,6 +4478,7 @@ body{margin:0;background:#1e293b;font-family:"Microsoft YaHei","PingFang SC",san
     }
     $('#level-name').textContent = g.level.name;
     updatePanel();
+    scheduleFit();
   }
 
   function fillRow(sel, items) {
@@ -4404,8 +4589,13 @@ body{margin:0;background:#1e293b;font-family:"Microsoft YaHei","PingFang SC",san
     }
   }
 
-  root.addEventListener('resize', fit);
-  root.addEventListener('orientationchange', fit);
+  root.addEventListener('resize', scheduleFit);
+  // 旋转后个别浏览器会先报旧尺寸，再报新尺寸；补一次延迟重排以避免停留在中间态。
+  root.addEventListener('orientationchange', () => {
+    scheduleFit();
+    setTimeout(fit, 120);
+    setTimeout(fit, 320);
+  });
   document.addEventListener('pointerdown', () => A.unlock());
   document.addEventListener('contextmenu', e => e.preventDefault());
   document.addEventListener('keydown', onKey);
